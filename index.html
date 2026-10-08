@@ -1,13 +1,16 @@
+<style>html,body{margin:0;overflow:hidden;background:#111}</style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <div id="st" style="position:fixed;top:8px;left:100px;z-index:8;color:#fff;font:14px sans-serif;text-shadow:0 0 3px #000"></div>
 <style>body{margin:0;background:#222}</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<button onclick="var m=document.getElementById('menu');m.style.display=m.style.display=='block'?'none':'block'" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;z-index:8;background:rgba(0,0,0,0.85);padding:8px;text-align:center">
+<button onclick="opcoes()" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="z-index:30;max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;background:rgba(0,0,0,0.92);padding:8px;text-align:center">
 <button onclick="criarSala()">🌐 Criar sala</button>
 <button onclick="entrarSala()">🔗 Entrar na sala</button>
 <button onclick="sairOnline();novoJogo()">❌ Sair do online</button><br>
 <button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button><br>
+<button onclick="fecharOpc()">✅ Fechar</button>
+<button onclick="voltarMenu()">🏠 Menu</button><br>
 <button onclick="mesaCor='#0a6b2e'">Mesa Verde</button>
 <button onclick="mesaCor='#12508f'">Mesa Azul</button>
 <button onclick="mesaCor='#8f1d1d'">Mesa Vermelha</button>
@@ -15,14 +18,8 @@
 <button onclick="skinBola=0">Bolas Clássicas</button>
 <button onclick="skinBola=1">Bolas Neon</button>
 <button onclick="skinBola=2">Bolas Pastel</button><br>
-<button onclick="taco=4">Taco Ouro</button>
-<button onclick="taco=5">Taco Rosa</button>
-<button onclick="taco=6">Taco Galáxia</button>
-<button onclick="taco=7">Taco Carbono</button><br>
-<button onclick="taco=0">Taco Madeira</button>
-<button onclick="taco=1">Taco Neon</button>
-<button onclick="taco=2">Taco Fogo</button>
-<button onclick="taco=3">Taco Gelo</button><br>
+<br>
+<br>
 <button onclick="dif=0.2">Fácil</button>
 <button onclick="dif=0.08">Médio</button>
 <button onclick="dif=0.02">Difícil</button>
@@ -388,7 +385,7 @@ const SKINS = [
   { a: "#c77dff", b: "#10002b" },
   { a: "#999999", b: "#111111" },
 ];
-function desenharTaco(dx, dy, d) {
+function desenharTaco0(dx, dy, d) {
   const sk = SKINS[taco];
   const m = Math.hypot(dx, dy) || 1;
   const ux = -dx / m, uy = -dy / m;
@@ -556,6 +553,8 @@ function desenharGuia(dx, dy) {
     const th = p - Math.sqrt(r2 - q);
     if (th > 0 && th < t) { t = th; alvo = b; }
   }
+  const lim = 100 + stt()[1] * 6;
+  if (t > lim) { t = lim; alvo = null; }
   const hx = branca.x + ux * t, hy = branca.y + uy * t;
   ctx.save();
   ctx.setLineDash([]);
@@ -593,11 +592,11 @@ function atualizarMira() {
 
 function bater() {
   if (!mirando) return;
-  if (online === 2) { enviar({ t: 'tacada', a: ang, p: potencia, sx: spinX, sy: spinY }); return; }
-  const f = potencia * 15;
+  if (online === 2) { enviar({ t: 'tacada', a: ang, p: potencia * fM(), sx: spinX * efM(), sy: spinY * efM() }); return; }
+  const f = potencia * 15 * fM();
   branca.vx = Math.cos(ang) * f;
   branca.vy = Math.sin(ang) * f;
-  branca.sx = spinX; branca.sy = spinY;
+  branca.sx = spinX * efM(); branca.sy = spinY * efM();
   branca.ex = Math.cos(ang); branca.ey = Math.sin(ang); branca.livre = true;
   jogando = true; caiu = []; falta = false;
 }
@@ -832,7 +831,168 @@ function netLoop() {
     v: vez, j: jogando, f: fim, m: msg, p: posicionando, g: grupo, fa: falta });
 }
 
+const CUES = [
+  { nome: "Clássico", preco: 0, a: "#e0b070", b: "#5b3a1a", r: "#222" },
+  { nome: "Carvão", preco: 300, a: "#8a8a8a", b: "#111", r: "#ddd" },
+  { nome: "Neon", preco: 500, a: "#39ff14", b: "#0a3d00", r: "#fff" },
+  { nome: "Fogo", preco: 700, a: "#ffcc00", b: "#d01010", r: "#fff" },
+  { nome: "Gelo", preco: 900, a: "#e0f7ff", b: "#1e6bff", r: "#fff" },
+  { nome: "Rosa", preco: 1000, a: "#ffd1f0", b: "#e91e8c", r: "#fff" },
+  { nome: "Ouro", preco: 1500, a: "#fff3a0", b: "#b8860b", r: "#fff" },
+  { nome: "Galáxia", preco: 2000, a: "#c77dff", b: "#10002b", r: "#ffd1f0" },
+];
+
+function drawCue(g, x, y, ux, uy, len, k) {
+  g.save();
+  g.translate(x, y);
+  g.rotate(Math.atan2(uy, ux));
+  g.setLineDash([]);
+  const corpo = () => {
+    g.beginPath();
+    g.moveTo(10, -2.5); g.lineTo(len, -5.5);
+    g.lineTo(len, 5.5); g.lineTo(10, 2.5);
+    g.closePath();
+  };
+  g.save(); g.translate(3, 6);
+  g.fillStyle = "rgba(0,0,0,0.28)"; corpo(); g.fill();
+  g.restore();
+  const gx = g.createLinearGradient(10, 0, len, 0);
+  gx.addColorStop(0, k.a); gx.addColorStop(1, k.b);
+  corpo(); g.fillStyle = gx; g.fill();
+  g.fillStyle = k.r;
+  for (const p of [0.6, 0.66]) {
+    const hw = 2.5 + 3 * p;
+    g.fillRect(10 + (len - 10) * p, -hw, 4, hw * 2);
+  }
+  const gy = g.createLinearGradient(0, -6, 0, 6);
+  gy.addColorStop(0, "rgba(0,0,0,0.5)");
+  gy.addColorStop(0.3, "rgba(255,255,255,0.4)");
+  gy.addColorStop(0.55, "rgba(255,255,255,0)");
+  gy.addColorStop(1, "rgba(0,0,0,0.55)");
+  corpo(); g.fillStyle = gy; g.fill();
+  g.fillStyle = "#f4f4f4"; g.fillRect(3, -2.5, 8, 5);
+  g.fillStyle = "#4aa3ff"; g.fillRect(0, -2.2, 3.5, 4.4);
+  g.fillStyle = k.b;
+  g.beginPath(); g.ellipse(len, 0, 2, 5.5, 0, 0, 7); g.fill();
+  g.restore();
+}
+
+function desenharTaco(dx, dy, d) {
+  const m = Math.hypot(dx, dy) || 1;
+  const ux = -dx / m, uy = -dy / m;
+  const rec = 14 + Math.min(d, 150) * 0.5;
+  drawCue(ctx, branca.x + ux * rec, branca.y + uy * rec, ux, uy, 230, CUES[taco] || CUES[0]);
+}
+let save = { moedas: 200, donos: [0], taco: 0 };
+try {
+  const r = localStorage.getItem("sinuca_save");
+  if (r) save = Object.assign(save, JSON.parse(r));
+} catch (e) {}
+taco = save.taco;
+function gravar() {
+  try { localStorage.setItem("sinuca_save", JSON.stringify(save)); } catch (e) {}
+}
+
+let pago = false;
+function premio() {
+  if (!fim) { pago = false; return; }
+  if (pago) return;
+  pago = true;
+  save.moedas += msg.includes("Jogador " + eu) ? 100 : 25;
+  gravar();
+}
+
+const loja = document.createElement("div");
+loja.className = "lj";
+loja.style.cssText = "position:fixed;inset:0;background:#10151c;color:#fff;font-family:sans-serif;overflow:auto;display:none;z-index:22;padding:12px";
+document.body.appendChild(loja);
+
+function abrirLoja() {
+  let h = "<style>.lj button{font-size:16px;padding:8px 12px}</style>";
+  h += "<h2 style='margin:0'>🛒 Loja de tacos</h2><p>🪙 " + save.moedas;
+  h += " <button onclick='fecharLoja()'>Voltar</button></p>";
+  h += "<div style='display:flex;flex-wrap:wrap;gap:10px'>";
+  CUES.forEach((k, i) => {
+    let bt;
+    if (taco === i) bt = "<b>✅ Equipado</b>";
+    else if (save.donos.includes(i)) bt = "<button onclick='equipar(" + i + ")'>Equipar</button>";
+    else bt = "<button onclick='comprar(" + i + ")'>Comprar 🪙" + k.preco + "</button>";
+    h += "<div style='background:#1b2430;border-radius:10px;padding:10px;width:250px'>" + k.nome;
+    h += "<br><canvas id='pv" + i + "' width='230' height='24'></canvas>" + barras(k) + bt + "</div>";
+  });
+  loja.innerHTML = h + "</div>";
+  loja.style.display = "block";
+  CUES.forEach((k, i) => {
+    drawCue(document.getElementById("pv" + i).getContext("2d"), 6, 12, 1, 0, 215, k);
+  });
+}
+function comprar(i) {
+  if (save.moedas < CUES[i].preco) { alert("Moedas insuficientes. Ganhe partidas!"); return; }
+  save.moedas -= CUES[i].preco;
+  save.donos.push(i);
+  equipar(i);
+}
+function equipar(i) { taco = i; save.taco = i; gravar(); abrirLoja(); }
+function fecharLoja() { loja.style.display = "none"; abrirMenu(); }
+function tela() {
+  try {
+    const e = document.documentElement;
+    if (!document.fullscreenElement && e.requestFullscreen) {
+      e.requestFullscreen().then(() => {
+        try { screen.orientation.lock("landscape").catch(() => {}); } catch (x) {}
+      }).catch(() => {});
+    }
+  } catch (x) {}
+}
+
+const mp = document.createElement("div");
+mp.style.cssText = "position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1d6b3a,#07140d);color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;z-index:20;text-align:center;overflow:auto";
+document.body.appendChild(mp);
+const EST = "<style>.mb{font-size:18px;padding:11px 0;width:260px;border:0;border-radius:12px;background:#f5c800;color:#111;font-weight:bold}.mb.s{background:#2a3b4d;color:#fff}</style><div style='font-size:32px;font-weight:bold'>🎱 SINUCA</div>";
+function B(f, t, s) { return "<button class='mb " + (s || "") + "' onclick='" + f + "'>" + t + "</button>"; }
+
+function abrirMenu() {
+  mp.innerHTML = EST + "<div>🪙 " + save.moedas + "</div>" +
+    B("jogarBot()", "🎮 Jogar") + B("menuOnline()", "🌐 Jogar online") +
+    B("irCamp()", "🏆 Campeonato") + B("irLoja()", "🛒 Loja de tacos") +
+    B("opcoes()", "⚙ Opções", "s");
+  mp.style.display = "flex";
+}
+function menuOnline() {
+  mp.innerHTML = EST + B("irOnline(1)", "➕ Criar sala") + B("irOnline(2)", "🔗 Entrar na sala") + B("abrirMenu()", "⬅ Voltar", "s");
+}
+function fechar() { mp.style.display = "none"; tela(); }
+function jogarBot() { sairOnline(); torneioAtivo = false; novoJogo(); fechar(); }
+function irOnline(n) { fechar(); if (n === 1) criarSala(); else entrarSala(); }
+function irCamp() { fechar(); novoTorneio(); mostrarTorneio(); }
+function irLoja() { mp.style.display = "none"; tela(); abrirLoja(); }
+function opcoes() { document.getElementById("menu").style.display = "block"; }
+function fecharOpc() { document.getElementById("menu").style.display = "none"; }
+function voltarMenu() { fecharOpc(); abrirMenu(); }
+abrirMenu();
+
+const ST = [
+  [30, 30, 30], [40, 40, 45], [50, 45, 50], [65, 50, 55],
+  [55, 65, 65], [60, 70, 60], [80, 75, 70], [95, 90, 90],
+];
+function stt() { return ST[taco] || ST[0]; }
+function fM() { return 0.9 + stt()[0] / 100 * 0.3; }
+function efM() { return 0.5 + stt()[2] / 100; }
+function barras(k) {
+  const v = ST[CUES.indexOf(k)] || ST[0];
+  const n = ["Força", "Mira", "Efeito"];
+  let h = "<div style='font-size:13px;margin:6px 0'>";
+  for (let i = 0; i < 3; i++) {
+    h += "<div style='display:flex;align-items:center;gap:6px;margin:2px 0'><span style='width:50px'>" + n[i] +
+      "</span><div style='flex:1;height:8px;background:#333;border-radius:4px'><div style='width:" + v[i] +
+      "%;height:8px;background:#4aa3ff;border-radius:4px'></div></div><span style='width:24px'>" + v[i] + "</span></div>";
+  }
+  return h + "</div>";
+}
+
 function loop() {
+
+
 
 
 
@@ -840,6 +1000,7 @@ function loop() {
   botLoop();
   atualizarMira();
   torneioLoop();
+  premio();
   if (online !== 2) for (let i = 0; i < SUB; i++) passo();
   netLoop();
   desenhar();
