@@ -1,7 +1,4 @@
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a6b2e">
-<link rel="icon" href="icon.svg">
-<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");</script>
+<script>window.onerror=function(m,u,l){var e=document.createElement("div");e.style.cssText="position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;z-index:99;font:14px sans-serif;padding:6px";e.textContent="ERRO linha "+l+": "+m;document.body.appendChild(e)}</script>
 <style>html,body{margin:0;overflow:hidden;background:#111}</style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <div id="st" style="position:fixed;top:8px;left:100px;z-index:8;color:#fff;font:14px sans-serif;text-shadow:0 0 3px #000"></div>
@@ -58,7 +55,7 @@ let posicionando = false;
 let arrastando = false;
 let dedo = { x: 0, y: 0 };
 
-function novoJogo() {
+function novoJogo0() {
   bolas = [{ x: 160, y: 180, vx: 0, vy: 0, cor: "white" }];
   branca = bolas[0];
   let k = 0;
@@ -164,7 +161,7 @@ function restantes(v) {
   return bolas.filter(b => b.num && b.num !== 8 && b.listrada === l).length;
 }
 
-function fimDaJogada() {
+function fimDaJogada0() {
   jogando = false;
   if (caiu.some(b => b.num === 8)) {
     const ok = grupo[vez] && restantes(vez) === 0 && !falta;
@@ -284,11 +281,11 @@ function desenhar0() {
   ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Vez: Jogador " + vez + (online && vez === eu ? " (você)" : "") + nomeGrupo(vez), W / 2, 12);
+  ctx.fillText(treino ? "🎯 Tacadas: " + (MAXT - tacadas) + "   Pontos: " + pontos : "Vez: Jogador " + vez + (online && vez === eu ? " (você)" : "") + nomeGrupo(vez), W / 2, 12);
   if (posicionando) ctx.fillText("Bola na mão: arraste a branca", W / 2, 34);
   ctx.font = "14px sans-serif";
   ctx.textBaseline = "bottom";
-  for (const j of [1, 2]) {
+  for (const j of (treino ? [] : [1, 2])) {
     const f = grupo[j] ? 7 - restantes(j) : 0;
     ctx.fillText((online ? "J" + j : (j === 1 ? "Você" : "Bot")) + ": " + f + "/7",
                  j === 1 ? 160 : 480, H - 12);
@@ -902,6 +899,7 @@ function premio() {
   if (!fim) { pago = false; return; }
   if (pago) return;
   pago = true;
+  if (treino) return;
   save.moedas += msg.includes("Jogador " + eu) ? 100 : 25;
   gravar();
 }
@@ -973,7 +971,6 @@ function irLoja() { mp.style.display = "none"; tela(); abrirLoja(); }
 function opcoes() { document.getElementById("menu").style.display = "block"; }
 function fecharOpc() { document.getElementById("menu").style.display = "none"; }
 function voltarMenu() { fecharOpc(); abrirMenu(); }
-abrirMenu();
 
 const ST = [
   [30, 30, 30], [40, 40, 45], [50, 45, 50], [65, 50, 55],
@@ -994,6 +991,166 @@ function barras(k) {
   return h + "</div>";
 }
 
+function nivel(xp) { return Math.floor(Math.sqrt(xp / 40)) + 1; }
+function xpDe(n) { return (n - 1) * (n - 1) * 40; }
+var RK = [["🌱","Iniciante"],["🥉","Bronze"],["🥈","Prata"],["🥇","Ouro"],["💎","Platina"],["👑","Diamante"]];
+function rank(n) { return RK[n < 5 ? 0 : n < 10 ? 1 : n < 15 ? 2 : n < 20 ? 3 : n < 30 ? 4 : 5]; }
+
+function toast(t) {
+  const d = document.createElement("div");
+  d.style.cssText = "position:fixed;top:50px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:8px 14px;border-radius:10px;z-index:40;font:16px sans-serif";
+  d.textContent = t;
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+function ganharXP(q) {
+  const a = nivel(save.xp || 0);
+  save.xp = (save.xp || 0) + q;
+  const b = nivel(save.xp);
+  if (b > a) {
+    save.moedas += 100 * (b - a);
+    toast("⬆ Nível " + b + "! +" + 100 * (b - a) + " 🪙");
+  }
+  gravar();
+}
+
+var xpPago = false;
+function premioXP() {
+  if (!fim) { xpPago = false; return; }
+  if (xpPago) return;
+  xpPago = true;
+  if (treino) return;
+  ganharXP(msg.includes("Jogador " + eu) ? 50 : 15);
+}
+
+function perfil() {
+  const xp = save.xp || 0, n = nivel(xp);
+  const a = xpDe(n), b = xpDe(n + 1);
+  const r = rank(n), p = Math.round((xp - a) / (b - a) * 100);
+  return "<div style='font-size:15px'>" + r[0] + " " + r[1] + " · Nível " + n + "</div>" +
+    "<div style='width:200px;height:8px;background:#333;border-radius:4px;margin:3px auto'><div style='width:" + p + "%;height:8px;background:#f5c800;border-radius:4px'></div></div>" +
+    "<div style='font-size:12px;opacity:.8'>" + xp + " / " + b + " XP</div>";
+}
+
+function abrirMenu() {
+  treino = false;
+  mp.style.justifyContent = "safe center";
+  mp.innerHTML = EST + "<style>.mb{width:230px;font-size:16px;padding:9px 0}</style>" +
+    "<div>🪙 " + save.moedas + "</div>" + perfil() +
+    "<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px'>" +
+    B("jogarBot()", "🎮 Jogar") + B("menuOnline()", "🌐 Jogar online") +
+    B("irCamp()", "🏆 Campeonato") + B("irLoja()", "🛒 Loja de tacos") +
+    B("irRoleta()", "🎁 Roleta diária") + B("irTreino()", "🎯 Treino") +
+    B("opcoes()", "⚙ Opções", "s") + "</div>";
+  mp.style.display = "flex";
+}
+
+function ganhaTaco() {
+  const l = [1, 2, 3, 4].filter(i => !save.donos.includes(i));
+  if (!l.length) { save.moedas += 300; return "🪙 300"; }
+  const i = l[Math.floor(Math.random() * l.length)];
+  save.donos.push(i);
+  return "Taco " + CUES[i].nome + "!";
+}
+var PR = [
+  { n: "🪙50", p: 25, f: () => { save.moedas += 50; } },
+  { n: "🪙100", p: 20, f: () => { save.moedas += 100; } },
+  { n: "⭐60 XP", p: 15, f: () => { ganharXP(60); } },
+  { n: "🪙75", p: 15, f: () => { save.moedas += 75; } },
+  { n: "🪙200", p: 8, f: () => { save.moedas += 200; } },
+  { n: "⭐120 XP", p: 8, f: () => { ganharXP(120); } },
+  { n: "🪙150", p: 6, f: () => { save.moedas += 150; } },
+  { n: "🎁 Taco", p: 3, f: ganhaTaco },
+];
+function sorteio() {
+  let t = 0;
+  PR.forEach(x => t += x.p);
+  let r = Math.random() * t;
+  for (let i = 0; i < PR.length; i++) { r -= PR[i].p; if (r < 0) return i; }
+  return 0;
+}
+
+const rol = document.createElement("div");
+rol.style.cssText = "position:fixed;inset:0;background:#10151c;color:#fff;font-family:sans-serif;display:none;z-index:22;align-items:center;justify-content:center;gap:30px;text-align:center";
+document.body.appendChild(rol);
+
+function irRoleta() { mp.style.display = "none"; tela(); abrirRoleta(); }
+function fecharRoleta() { rol.style.display = "none"; abrirMenu(); }
+
+function abrirRoleta() {
+  const pode = save.dia !== new Date().toDateString();
+  const cs = ["#e02020","#f5c800","#1e40ff","#0a8a3a","#ff7a00","#6a1b9a","#e91e8c","#00b7c2"];
+  const cg = cs.map((c, i) => c + " " + i * 45 + "deg " + (i + 1) * 45 + "deg").join(",");
+  const lb = PR.map((p, i) => "<div style='position:absolute;left:50%;top:50%;white-space:nowrap;font-size:13px;font-weight:bold;text-shadow:0 0 3px #000;transform:rotate(" + (i * 45 + 22.5) + "deg) translateY(-78px) translateX(-50%)'>" + p.n + "</div>").join("");
+  rol.innerHTML =
+    "<div style='position:relative;width:200px;height:200px'>" +
+    "<div id='rd' style='position:absolute;inset:0;border-radius:50%;border:4px solid #fff;box-sizing:border-box;background:conic-gradient(" + cg + ");transition:transform 4s cubic-bezier(.1,.7,.1,1)'>" + lb + "</div>" +
+    "<div style='position:absolute;left:50%;top:-18px;transform:translateX(-50%);font-size:26px'>🔻</div></div>" +
+    "<div><h2 style='margin:0 0 10px'>🎁 Roleta diária</h2><div id='rr' style='font-size:18px;min-height:50px'>" +
+    (pode ? "<button style='font-size:20px;padding:10px 24px' onclick='girar()'>GIRAR</button>" : "Você já girou hoje.<br>Volte amanhã!") +
+    "</div><br><button style='font-size:16px;padding:8px 16px' onclick='fecharRoleta()'>Voltar</button></div>";
+  rol.style.display = "flex";
+}
+
+function girar() {
+  const hoje = new Date().toDateString();
+  if (save.dia === hoje) return;
+  save.dia = hoje;
+  const i = sorteio();
+  const res = PR[i].f();
+  gravar();
+  document.getElementById("rd").style.transform = "rotate(" + (360 * 5 - (i * 45 + 22.5)) + "deg)";
+  setTimeout(() => {
+    document.getElementById("rr").innerHTML = "Você ganhou:<br><b style='font-size:24px'>" + (res || PR[i].n) + "</b>";
+  }, 4200);
+}
+
+var treino = false, tacadas = 0, pontos = 0, MAXT = 8;
+
+function novoJogo() {
+  novoJogo0();
+  if (treino) montarTreino();
+}
+
+function montarTreino() {
+  tacadas = 0; pontos = 0; caiu = []; falta = false;
+  bolas.length = 1;
+  for (let i = 1; i <= 5; i++) {
+    for (let t = 0; t < 300; t++) {
+      const x = 260 + Math.random() * (W - 300);
+      const y = 40 + Math.random() * (H - 80);
+      const livre = bolas.every(b => Math.hypot(b.x - x, b.y - y) > R * 3) &&
+        cacapas.every(k => Math.hypot(k.x - x, k.y - y) > RC + 25);
+      if (livre || t === 299) {
+        bolas.push({ x: x, y: y, vx: 0, vy: 0, cor: cores[i - 1], num: i, listrada: false });
+        break;
+      }
+    }
+  }
+}
+
+function fimDaJogada() {
+  if (!treino) { fimDaJogada0(); return; }
+  jogando = false; vez = 1;
+  tacadas++; pontos += caiu.length;
+  if (bolas.length === 1 || tacadas >= MAXT) {
+    const limpou = bolas.length === 1;
+    const g = pontos * 10 + (limpou ? 30 : 0);
+    save.moedas += g;
+    const novo = pontos > (save.rec || 0);
+    if (novo) save.rec = pontos;
+    ganharXP(pontos * 6);
+    fim = true;
+    msg = pontos + "/5 bolas! +" + g + " 🪙" + (novo ? " 🏅" : "");
+  }
+}
+
+function irTreino() {
+  sairOnline(); torneioAtivo = false;
+  treino = true; novoJogo(); fechar();
+}
+
 function loop() {
 
 
@@ -1005,10 +1162,12 @@ function loop() {
   atualizarMira();
   torneioLoop();
   premio();
+  premioXP();
   if (online !== 2) for (let i = 0; i < SUB; i++) passo();
   netLoop();
   desenhar();
   requestAnimationFrame(loop);
 }
 loop();
+abrirMenu();
 </script>
