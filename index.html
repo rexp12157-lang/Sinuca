@@ -1,0 +1,747 @@
+<style>body{margin:0;background:#222}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<button onclick="var m=document.getElementById('menu');m.style.display=m.style.display=='block'?'none':'block'" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;z-index:8;background:rgba(0,0,0,0.85);padding:8px;text-align:center">
+<button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button><br>
+<button onclick="mesaCor='#0a6b2e'">Mesa Verde</button>
+<button onclick="mesaCor='#12508f'">Mesa Azul</button>
+<button onclick="mesaCor='#8f1d1d'">Mesa Vermelha</button>
+<button onclick="mesaCor='#5b2a86'">Mesa Roxa</button><br>
+<button onclick="skinBola=0">Bolas Clássicas</button>
+<button onclick="skinBola=1">Bolas Neon</button>
+<button onclick="skinBola=2">Bolas Pastel</button><br>
+<button onclick="taco=4">Taco Ouro</button>
+<button onclick="taco=5">Taco Rosa</button>
+<button onclick="taco=6">Taco Galáxia</button>
+<button onclick="taco=7">Taco Carbono</button><br>
+<button onclick="taco=0">Taco Madeira</button>
+<button onclick="taco=1">Taco Neon</button>
+<button onclick="taco=2">Taco Fogo</button>
+<button onclick="taco=3">Taco Gelo</button><br>
+<button onclick="dif=0.2">Fácil</button>
+<button onclick="dif=0.08">Médio</button>
+<button onclick="dif=0.02">Difícil</button>
+</div>
+<canvas id="c" width="704" height="424"
+ style="background:#0a6b2e; touch-action:none; height:calc(100dvh - 6px); width:auto; max-width:calc(100vw - 130px); display:block; margin:0 auto"></canvas>
+<div id="spin" style="position:fixed;bottom:4px;left:50%;margin-left:-22px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bbb);border:2px solid #333;z-index:6;touch-action:none;opacity:0.9">
+<div id="pt" style="position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:#e02020;left:50%;top:50%"></div>
+</div>
+<style>
+.v{position:fixed;top:12vh;height:76vh;width:44px;z-index:5}
+.v input{position:absolute;left:0;top:100%;width:76vh;height:44px;margin:0;touch-action:none;transform-origin:0 0;transform:rotate(-90deg)}
+</style>
+<div class="v" style="left:6px"><input id="sm" type="range" min="0" max="1000" value="500"></div>
+<div class="v" style="right:6px"><input id="sp" type="range" min="0" max="100" value="50"></div>
+
+<script>
+const c = document.getElementById("c");
+const ctx = c.getContext("2d");
+const W = 640, H = 360, R = 10, RC = 26;
+const cacapas = [
+  { x: 0, y: 0 }, { x: W, y: 0 },
+  { x: W / 2, y: 0 }, { x: W / 2, y: H },
+  { x: 0, y: H }, { x: W, y: H },
+];
+const ordem = [1, 9, 2, 10, 8, 3, 4, 11, 5, 12, 13, 6, 14, 7, 15];
+const cores = ["#f5c800","#1e40ff","#e02020","#6a1b9a","#ff7a00","#0a8a3a","#8b1a1a","#111111"];
+
+let bolas, branca, grupo, vez, jogando, fim, msg, caiu, falta;
+let mirando = false;
+let posicionando = false;
+let arrastando = false;
+let dedo = { x: 0, y: 0 };
+
+function novoJogo() {
+  bolas = [{ x: 160, y: 180, vx: 0, vy: 0, cor: "white" }];
+  branca = bolas[0];
+  let k = 0;
+  for (let r = 0; r < 5; r++) {
+    for (let i = 0; i <= r; i++) {
+      const n = ordem[k++];
+      bolas.push({
+        x: 440 + r * 19,
+        y: 180 + (i - r / 2) * 21,
+        vx: 0, vy: 0,
+        cor: cores[(n - 1) % 8],
+        num: n,
+        listrada: n > 8,
+      });
+    }
+  }
+  grupo = { 1: null, 2: null };
+  vez = 1; jogando = false; fim = false;
+  msg = ""; caiu = []; falta = false;
+}
+novoJogo();
+
+function parado() {
+  return bolas.every(b => Math.hypot(b.vx, b.vy) < 0.05);
+}
+
+function pos(e) {
+  const r = c.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return {
+    x: (t.clientX - r.left) * (c.width / r.width) - M,
+    y: (t.clientY - r.top) * (c.height / r.height) - M,
+  };
+}
+
+function comecar(e) {
+  e.preventDefault();
+  if (fim) { if (torneioAtivo) { torneioAtivo = false; mostrarTorneio(); } else novoJogo(); return; }
+  if (jogando || !parado() || vez === 2) return;
+  dedo = pos(e);
+  if (posicionando) { arrastando = true; mover(e); return; }
+  mirando = true;
+}
+function mover(e) {
+  e.preventDefault();
+  if (arrastando) {
+    const p = pos(e);
+    branca.x = Math.max(R, Math.min(W - R, p.x));
+    branca.y = Math.max(R, Math.min(H - R, p.y));
+    return;
+  }
+  if (mirando) dedo = pos(e);
+}
+function soltar(e) {
+  e.preventDefault();
+  if (arrastando) {
+    arrastando = false;
+    if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
+    return;
+  }
+  if (!mirando) return;
+  mirando = false;
+  const dx = branca.x - dedo.x;
+  const dy = branca.y - dedo.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 8) return;
+  const forca = Math.min(d, 150) / 10;
+  branca.vx = (dx / d) * forca;
+  branca.vy = (dy / d) * forca;
+  jogando = true; caiu = []; falta = false;
+}
+c.addEventListener("touchstart", comecar);
+c.addEventListener("touchmove", mover);
+c.addEventListener("touchend", soltar);
+c.addEventListener("mousedown", comecar);
+c.addEventListener("mousemove", mover);
+c.addEventListener("mouseup", soltar);
+
+function colidir(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const d = Math.hypot(dx, dy);
+  if (d === 0 || d >= R * 2) return;
+  const nx = dx / d, ny = dy / d;
+  const sobra = R * 2 - d;
+  a.x -= nx * sobra / 2; a.y -= ny * sobra / 2;
+  b.x += nx * sobra / 2; b.y += ny * sobra / 2;
+  const t = (a.vx * nx + a.vy * ny) - (b.vx * nx + b.vy * ny);
+  a.vx -= t * nx; a.vy -= t * ny;
+  b.vx += t * nx; b.vy += t * ny;
+  somBatida(Math.abs(t));
+  efeitoBatida(a, b);
+}
+
+function outro(v) { return v === 1 ? 2 : 1; }
+function nomeGrupo(v) {
+  if (!grupo[v]) return "";
+  return grupo[v] === "lisa" ? " (lisas)" : " (listradas)";
+}
+function restantes(v) {
+  const l = grupo[v] === "listrada";
+  return bolas.filter(b => b.num && b.num !== 8 && b.listrada === l).length;
+}
+
+function fimDaJogada() {
+  jogando = false;
+  if (caiu.some(b => b.num === 8)) {
+    const ok = grupo[vez] && restantes(vez) === 0 && !falta;
+    const gan = ok ? vez : outro(vez);
+    fim = true;
+    msg = "Jogador " + gan + " venceu!";
+    return;
+  }
+  if (!grupo[vez] && caiu.length && !falta) {
+    const g = caiu[0].listrada ? "listrada" : "lisa";
+    grupo[vez] = g;
+    grupo[outro(vez)] = g === "lisa" ? "listrada" : "lisa";
+  }
+  let meu = false;
+  if (!falta && grupo[vez]) {
+    meu = caiu.some(b => b.listrada === (grupo[vez] === "listrada"));
+  }
+  if (!meu) vez = outro(vez);
+  if (falta) posicionando = true;
+}
+
+function checarCacapas() {
+  for (let i = bolas.length - 1; i >= 0; i--) {
+    const b = bolas[i];
+    if (cacapas.some(k => Math.hypot(b.x - k.x, b.y - k.y) < RC)) {
+      if (b === branca) {
+        b.x = 160; b.y = 180; b.vx = 0; b.vy = 0;
+        falta = true; posicionando = true;
+      } else {
+        bolas.splice(i, 1);
+        caiu.push(b);
+        somCacapa();
+      }
+    }
+  }
+}
+
+const SUB = 4, FR = Math.pow(0.985, 1 / SUB);
+function passo() {
+  for (const b of bolas) {
+    b.x += b.vx / SUB; b.y += b.vy / SUB;
+    if (b.sx && b.livre) curva(b);
+    b.vx *= FR; b.vy *= FR;
+    if (Math.hypot(b.vx, b.vy) < 0.05) { b.vx = 0; b.vy = 0; }
+    if (b.x < R) { b.x = R; b.vx *= -1; }
+    if (b.x > W - R) { b.x = W - R; b.vx *= -1; }
+    if (b.y < R) { b.y = R; b.vy *= -1; }
+    if (b.y > H - R) { b.y = H - R; b.vy *= -1; }
+  }
+  for (let i = 0; i < bolas.length; i++)
+    for (let j = i + 1; j < bolas.length; j++)
+      colidir(bolas[i], bolas[j]);
+  checarCacapas();
+  if (jogando && !fim && parado()) fimDaJogada();
+}
+
+function desenharBola0(b) {
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, R, 0, Math.PI * 2);
+  ctx.fillStyle = b.listrada ? "white" : b.cor;
+  ctx.fill();
+  if (b.listrada) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = b.cor;
+    ctx.fillRect(b.x - R, b.y - 5, R * 2, 10);
+    ctx.restore();
+  }
+  if (b.num) {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.fillStyle = "black";
+    ctx.font = "6px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b.num, b.x, b.y + 0.5);
+  }
+}
+
+function desenhar0() {
+  ctx.fillStyle = mesaCor;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#5b3a1a";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(0, 0, W, H);
+  ctx.fillStyle = "black";
+  for (const k of cacapas) {
+    ctx.beginPath();
+    ctx.arc(k.x, k.y, RC, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (mirando) {
+    const dx = branca.x - dedo.x;
+    const dy = branca.y - dedo.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 0) {
+      const s = Math.min(d, 150) / d;
+      ctx.beginPath();
+      ctx.moveTo(branca.x, branca.y);
+      ctx.lineTo(branca.x + dx * s, branca.y + dy * s);
+      ctx.strokeStyle = d > 120 ? "rgba(255,90,90,0.9)" : "rgba(255,255,255,0.7)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      desenharTaco(dx, dy, d);
+      desenharGuia(dx, dy);
+    }
+  }
+  for (const b of bolas) desenharBola(b);
+
+  ctx.fillStyle = "white";
+  ctx.font = "16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("Vez: Jogador " + vez + nomeGrupo(vez), W / 2, 12);
+  if (posicionando) ctx.fillText("Bola na mão: arraste a branca", W / 2, 34);
+  ctx.font = "14px sans-serif";
+  ctx.textBaseline = "bottom";
+  for (const j of [1, 2]) {
+    const f = grupo[j] ? 7 - restantes(j) : 0;
+    ctx.fillText((j === 1 ? "Você" : "Bot") + ": " + f + "/7",
+                 j === 1 ? 160 : 480, H - 12);
+  }
+  ctx.textBaseline = "top";
+
+  if (fim) {
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(170, 135, 300, 90);
+    ctx.fillStyle = "white";
+    ctx.font = "22px sans-serif";
+    ctx.fillText(msg, 320, 153);
+    ctx.font = "14px sans-serif";
+    ctx.fillText("Toque pra jogar de novo", 320, 190);
+  }
+}
+
+
+// ---- bot (Jogador 2) ----
+let botEspera = 0;
+function botJoga() {
+  // bola na mão: coloca a branca num lugar livre
+  if (posicionando) {
+    branca.x = 160; branca.y = 180;
+    posicionando = false;
+    return;
+  }
+  // escolhe alvos do grupo dele (ou qualquer uma se ainda não tem grupo)
+  let alvos = bolas.filter(b => b !== branca && b.num && b.num !== 8);
+  if (grupo[2]) {
+    const l = grupo[2] === "listrada";
+    const meus = alvos.filter(b => b.listrada === l);
+    alvos = meus.length ? meus : bolas.filter(b => b.num === 8);
+  }
+  if (!alvos.length) return;
+  // pega a mais próxima da branca
+  alvos.sort((a, b) =>
+    Math.hypot(a.x - branca.x, a.y - branca.y) -
+    Math.hypot(b.x - branca.x, b.y - branca.y));
+  const alvo = alvos[0];
+  // tenta mirar na bola e empurrar pra caçapa mais próxima dela
+  let melhor = cacapas[0];
+  for (const k of cacapas)
+    if (Math.hypot(alvo.x - k.x, alvo.y - k.y) <
+        Math.hypot(alvo.x - melhor.x, alvo.y - melhor.y)) melhor = k;
+  const dx = alvo.x - melhor.x, dy = alvo.y - melhor.y;
+  const dd = Math.hypot(dx, dy) || 1;
+  const px = alvo.x + (dx / dd) * R * 2;
+  const py = alvo.y + (dy / dd) * R * 2;
+  let ax = px - branca.x, ay = py - branca.y;
+  const d = Math.hypot(ax, ay) || 1;
+  const erro = (Math.random() - 0.5) * dif;
+  const ang = Math.atan2(ay, ax) + erro;
+  const forca = 8 + Math.random() * 5;
+  branca.vx = Math.cos(ang) * forca;
+  branca.vy = Math.sin(ang) * forca;
+  branca.sx = 0; branca.sy = 0; branca.livre = false;
+  jogando = true; caiu = []; falta = false;
+}
+
+function botLoop() {
+  if (vez === 2 && !jogando && !fim && parado()) {
+    botEspera++;
+    if (botEspera > 60) { botEspera = 0; botJoga(); }
+  } else botEspera = 0;
+}
+
+let dif = 0.08;
+let ac;
+function bip(f, d, v) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "triangle";
+    o.frequency.value = f;
+    g.gain.setValueAtTime(v, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + d);
+  } catch (e) {}
+}
+function somBatida(v) {
+  if (v > 0.3) bip(300 + Math.random() * 100, 0.06, Math.min(0.4, v / 10));
+}
+function somCacapa() { bip(120, 0.25, 0.4); }
+
+let taco = 0;
+let mesaCor = "#0a6b2e";
+const SKINS = [
+  { a: "#d9a066", b: "#5b3a1a" },
+  { a: "#39ff14", b: "#0a3d00" },
+  { a: "#ffcc00", b: "#e02020" },
+  { a: "#e0f7ff", b: "#1e6bff" },
+  { a: "#fff3a0", b: "#b8860b" },
+  { a: "#ffd1f0", b: "#e91e8c" },
+  { a: "#c77dff", b: "#10002b" },
+  { a: "#999999", b: "#111111" },
+];
+function desenharTaco(dx, dy, d) {
+  const sk = SKINS[taco];
+  const m = Math.hypot(dx, dy) || 1;
+  const ux = -dx / m, uy = -dy / m;
+  const recuo = 14 + Math.min(d, 150) * 0.5;
+  const x1 = branca.x + ux * recuo, y1 = branca.y + uy * recuo;
+  const x2 = x1 + ux * 220, y2 = y1 + uy * 220;
+  const g = ctx.createLinearGradient(x1, y1, x2, y2);
+  g.addColorStop(0, sk.a);
+  g.addColorStop(1, sk.b);
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.lineCap = "round";
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.strokeStyle = "#eee";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 + ux * 8, y1 + uy * 8); ctx.stroke();
+  ctx.restore();
+}
+
+// ---- campeonato ----
+const NOMES = ["Você","Ana","Bruno","Carla","Diego","Elisa","Fábio","Gabi","Hugo","Iara","João","Karen","Lucas","Marta","Nando","Olga","Paulo","Quica","Rafa","Sara","Tito","Úrsula","Vitor","Wanda","Xavier","Yara","Zeca","Bia","Caio","Duda","Enzo","Fran"];
+const FX = [[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+let T = null, torneioAtivo = false, reportado = false;
+
+const painel = document.createElement("div");
+painel.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,10,0.96);color:#fff;font-family:sans-serif;text-align:center;padding:20px;overflow:auto;display:none;z-index:9";
+document.body.appendChild(painel);
+
+function sim(a, b) {
+  return Math.random() < T.f[a] / (T.f[a] + T.f[b]) ? a : b;
+}
+
+function novoTorneio() {
+  const ids = [];
+  for (let i = 1; i < 32; i++) ids.push(i);
+  ids.sort(() => Math.random() - 0.5);
+  ids.unshift(0);
+  T = {
+    f: NOMES.map(() => 0.3 + Math.random() * 0.4),
+    pts: NOMES.map(() => 0),
+    grupos: [], rod: 0, fase: "grupos",
+    lista: [], fim: false, final: "", opp: 0
+  };
+  for (let g = 0; g < 8; g++) T.grupos.push(ids.slice(g * 4, g * 4 + 4));
+  proximaPartida();
+}
+
+function proximaPartida() {
+  if (T.fase === "grupos") T.opp = T.grupos[0][T.rod + 1];
+  else {
+    const i = T.lista.indexOf(0);
+    T.opp = T.lista[i % 2 === 0 ? i + 1 : i - 1];
+  }
+}
+
+function nomeFase() {
+  if (T.fase === "grupos") return "Fase de grupos - rodada " + (T.rod + 1) + "/3";
+  return {16: "Oitavas de final", 8: "Quartas de final", 4: "Semifinal", 2: "Final"}[T.lista.length];
+}
+
+function resultado(ganhei) {
+  const fa = nomeFase();
+  if (T.fase === "grupos") {
+    T.grupos.forEach((gr, g) => {
+      FX[T.rod].forEach(([a, b]) => {
+        const A = gr[a], B = gr[b];
+        let w;
+        if (g === 0 && (A === 0 || B === 0)) w = ganhei ? 0 : (A === 0 ? B : A);
+        else w = sim(A, B);
+        T.pts[w] += 3;
+      });
+    });
+    T.rod++;
+    if (T.rod === 3) {
+      const q = T.grupos.map(gr => gr.slice().sort((x, y) => T.pts[y] - T.pts[x] || T.f[y] - T.f[x]));
+      T.lista = [];
+      for (let g = 0; g < 8; g += 2)
+        T.lista.push(q[g][0], q[g + 1][1], q[g + 1][0], q[g][1]);
+      T.fase = "mata";
+      if (!T.lista.includes(0)) { T.fim = true; T.final = "Eliminado na fase de grupos"; }
+    }
+  } else {
+    const prox = [];
+    for (let i = 0; i < T.lista.length; i += 2) {
+      const a = T.lista[i], b = T.lista[i + 1];
+      let w;
+      if (a === 0 || b === 0) w = ganhei ? 0 : (a === 0 ? b : a);
+      else w = sim(a, b);
+      prox.push(w);
+    }
+    const eraFinal = T.lista.length === 2;
+    T.lista = prox;
+    if (eraFinal) {
+      T.fim = true;
+      T.final = prox[0] === 0 ? "🏆 CAMPEÃO!" : "Vice-campeão! Perdeu a final.";
+    } else if (!prox.includes(0)) {
+      T.fim = true;
+      T.final = "Eliminado nas " + fa.toLowerCase();
+    }
+  }
+  if (!T.fim) proximaPartida();
+}
+
+function mostrarTorneio() {
+  let h = "<h2>🏆 Campeonato</h2>";
+  if (T.fim) {
+    h += "<h3>" + T.final + "</h3>";
+    h += "<button onclick='novoTorneio();mostrarTorneio()'>Novo campeonato</button> ";
+  } else {
+    h += "<h3>" + nomeFase() + "</h3>";
+    h += "<p>Você x " + NOMES[T.opp] + "</p>";
+    h += "<button onclick='comecarPartida()'>Jogar</button> ";
+  }
+  h += "<button onclick='fecharPainel()'>Fechar</button>";
+  if (T.fase === "grupos") {
+    h += "<h4>Grupo A</h4>";
+    T.grupos[0].slice().sort((x, y) => T.pts[y] - T.pts[x]).forEach(i => {
+      h += "<div>" + NOMES[i] + " - " + T.pts[i] + " pts</div>";
+    });
+  } else {
+    h += "<h4>Ainda no campeonato</h4>";
+    h += "<div>" + T.lista.map(i => NOMES[i]).join(", ") + "</div>";
+  }
+  painel.innerHTML = h;
+  painel.style.display = "block";
+}
+
+function fecharPainel() { painel.style.display = "none"; }
+
+function comecarPartida() {
+  fecharPainel();
+  novoJogo();
+  torneioAtivo = true;
+  reportado = false;
+  dif = T.fase === "grupos" ? 0.2 - T.rod * 0.03 : {16: 0.12, 8: 0.09, 4: 0.06, 2: 0.03}[T.lista.length];
+}
+
+function torneioLoop() {
+  if (torneioAtivo && fim && !reportado) {
+    reportado = true;
+    resultado(msg.includes("Jogador 1"));
+  }
+}
+
+function desenharGuia(dx, dy) {
+  const m = Math.hypot(dx, dy);
+  if (!m) return;
+  const ux = dx / m, uy = dy / m;
+  let t = 1e9, alvo = null;
+  if (ux > 0) t = Math.min(t, (W - R - branca.x) / ux);
+  if (ux < 0) t = Math.min(t, (R - branca.x) / ux);
+  if (uy > 0) t = Math.min(t, (H - R - branca.y) / uy);
+  if (uy < 0) t = Math.min(t, (R - branca.y) / uy);
+  for (const b of bolas) {
+    if (b === branca) continue;
+    const fx = b.x - branca.x, fy = b.y - branca.y;
+    const p = fx * ux + fy * uy;
+    if (p <= 0) continue;
+    const q = fx * fx + fy * fy - p * p;
+    const r2 = 4 * R * R;
+    if (q > r2) continue;
+    const th = p - Math.sqrt(r2 - q);
+    if (th > 0 && th < t) { t = th; alvo = b; }
+  }
+  const hx = branca.x + ux * t, hy = branca.y + uy * t;
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(255,255,255,0.8)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(branca.x, branca.y);
+  ctx.lineTo(hx, hy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(hx, hy, R, 0, Math.PI * 2);
+  ctx.stroke();
+  if (alvo) {
+    const ax = alvo.x - hx, ay = alvo.y - hy;
+    const am = Math.hypot(ax, ay) || 1;
+    ctx.strokeStyle = "rgba(255,220,80,0.9)";
+    ctx.beginPath();
+    ctx.moveTo(alvo.x, alvo.y);
+    ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+let ang = 0, potencia = 0.5, girando = false;
+let ult = { x: 0, y: 0 }, tm = null;
+
+function atualizarMira() {
+  mirando = !jogando && !fim && !posicionando && vez === 1 && parado();
+  if (mirando) {
+    const d = 20 + potencia * 130;
+    dedo = { x: branca.x - Math.cos(ang) * d, y: branca.y - Math.sin(ang) * d };
+  }
+}
+
+function bater() {
+  if (!mirando) return;
+  const f = potencia * 15;
+  branca.vx = Math.cos(ang) * f;
+  branca.vy = Math.sin(ang) * f;
+  branca.sx = spinX; branca.sy = spinY;
+  branca.ex = Math.cos(ang); branca.ey = Math.sin(ang); branca.livre = true;
+  jogando = true; caiu = []; falta = false;
+}
+
+function segurar(dir) {
+  parar();
+  tm = setInterval(() => { ang += dir * 0.003; }, 30);
+}
+function parar() { clearInterval(tm); }
+
+function comecar(e) {
+  e.preventDefault();
+  if (fim) {
+    if (torneioAtivo) { torneioAtivo = false; mostrarTorneio(); }
+    else novoJogo();
+    return;
+  }
+  if (jogando || !parado() || vez === 2) return;
+  ult = pos(e);
+  if (posicionando) { arrastando = true; mover(e); return; }
+  girando = true;
+}
+
+function mover(e) {
+  e.preventDefault();
+  const p = pos(e);
+  if (arrastando) {
+    branca.x = Math.max(R, Math.min(W - R, p.x));
+    branca.y = Math.max(R, Math.min(H - R, p.y));
+    return;
+  }
+  if (girando) {
+    ang += (p.y - ult.y) * 0.004;
+    ult = p;
+  }
+}
+
+function soltar(e) {
+  e.preventDefault();
+  if (arrastando) {
+    arrastando = false;
+    if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
+    return;
+  }
+  girando = false;
+}
+
+let ultS = 500;
+const sm = document.getElementById("sm");
+const sp = document.getElementById("sp");
+sm.oninput = () => { ang -= (sm.value - ultS) * 0.0012; ultS = +sm.value; };
+sm.onchange = () => { sm.value = 500; ultS = 500; };
+sp.oninput = () => { potencia = sp.value / 100; };
+sp.onchange = () => {
+  if (sp.value > 8) bater();
+  sp.value = 50; potencia = 0.5;
+};
+
+const M = 32;
+function desenhar() {
+  const w = W + 2 * M, h = H + 2 * M;
+  ctx.clearRect(0, 0, w, h);
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, "#8b5a2b");
+  g.addColorStop(0.5, "#5b3a1a");
+  g.addColorStop(1, "#8b5a2b");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "#2b1a0a";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1.5, 1.5, w - 3, h - 3);
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(M - 8, M - 8, W + 16, H + 16);
+  ctx.save();
+  ctx.translate(M, M);
+  desenhar0();
+  ctx.restore();
+}
+
+let skinBola = 0;
+const SKB = [
+  null,
+  {"#f5c800":"#fff200","#1e40ff":"#00d5ff","#e02020":"#ff2a2a","#6a1b9a":"#c13cff","#ff7a00":"#ff9500","#0a8a3a":"#00ff6a","#8b1a1a":"#ff2d95"},
+  {"#f5c800":"#ffe680","#1e40ff":"#8fb4ff","#e02020":"#ff9a9a","#6a1b9a":"#c9a0ff","#ff7a00":"#ffc58a","#0a8a3a":"#8fe0a8","#8b1a1a":"#d49a9a"},
+];
+function corSkin(c) {
+  const m = SKB[skinBola];
+  return m && m[c] ? m[c] : c;
+}
+function desenharBola(b) {
+  ctx.beginPath();
+  ctx.ellipse(b.x + 3, b.y + 4, R, R * 0.8, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.fill();
+  const o = b.cor;
+  b.cor = corSkin(o);
+  desenharBola0(b);
+  b.cor = o;
+  const g = ctx.createRadialGradient(b.x - R * 0.4, b.y - R * 0.45, 1, b.x, b.y, R);
+  g.addColorStop(0, "rgba(255,255,255,0.6)");
+  g.addColorStop(0.25, "rgba(255,255,255,0.1)");
+  g.addColorStop(0.7, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, R, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+}
+
+let spinX = 0, spinY = 0;
+const sc = document.getElementById("spin");
+const pt = document.getElementById("pt");
+function setSpin(e) {
+  const r = sc.getBoundingClientRect();
+  let x = (e.clientX - r.left) / r.width * 2 - 1;
+  let y = (e.clientY - r.top) / r.height * 2 - 1;
+  const m = Math.hypot(x, y);
+  if (m > 1) { x /= m; y /= m; }
+  if (m < 0.2) { x = 0; y = 0; }
+  spinX = x; spinY = -y;
+  pt.style.left = (50 + x * 40) + "%";
+  pt.style.top = (50 + y * 40) + "%";
+}
+sc.onpointerdown = setSpin;
+sc.onpointermove = e => { if (e.pressure > 0) setSpin(e); };
+
+function curva(b) {
+  const v = Math.hypot(b.vx, b.vy);
+  if (v < 0.2) return;
+  const px = -b.vy / v, py = b.vx / v;
+  b.vx += px * b.sx * 0.03 / SUB;
+  b.vy += py * b.sx * 0.03 / SUB;
+  b.sx *= 0.9995;
+}
+function efeitoBatida(a, b) {
+  const w = a === branca ? a : (b === branca ? b : null);
+  if (!w || !w.livre) return;
+  w.livre = false;
+  w.vx += w.ex * w.sy * 3;
+  w.vy += w.ey * w.sy * 3;
+}
+
+function loop() {
+
+
+
+  botLoop();
+  atualizarMira();
+  torneioLoop();
+  for (let i = 0; i < SUB; i++) passo();
+  desenhar();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
