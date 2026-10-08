@@ -194,6 +194,7 @@ function checarCacapas() {
         bolas.splice(i, 1);
         caiu.push(b);
         somCacapa();
+        efeitoPonto(b.x, b.y, b.cor);
       }
     }
   }
@@ -245,7 +246,7 @@ function desenharBola0(b) {
   }
 }
 
-function desenhar0() {
+function desenhar00() {
   ctx.fillStyle = mesaCor;
   ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = "#5b3a1a";
@@ -534,7 +535,7 @@ function torneioLoop() {
   }
 }
 
-function desenharGuia(dx, dy) {
+function desenharGuia0(dx, dy) {
   const m = Math.hypot(dx, dy);
   if (!m) return;
   const ux = dx / m, uy = dy / m;
@@ -795,6 +796,7 @@ function receber(m) {
 function aplicarEstado(m) {
   if (online !== 2) return;
   const px = branca.x, py = branca.y;
+  const ant = bolas;
   bolas = m.b.map(a => ({
     x: a[0], y: a[1], vx: a[2], vy: a[3],
     num: a[4] || undefined,
@@ -802,6 +804,7 @@ function aplicarEstado(m) {
     listrada: a[4] > 8,
   }));
   branca = bolas.find(b => !b.num);
+  for (const a of ant) if (a.num && !bolas.some(n => n.num === a.num)) efeitoPonto(a.x, a.y, a.cor);
   if (arrastando) { branca.x = px; branca.y = py; }
   vez = m.v; jogando = m.j; fim = m.f; msg = m.m;
   posicionando = m.p; grupo = m.g; falta = m.fa;
@@ -932,6 +935,7 @@ function comprar(i) {
   if (save.moedas < CUES[i].preco) { alert("Moedas insuficientes. Ganhe partidas!"); return; }
   save.moedas -= CUES[i].preco;
   save.donos.push(i);
+  festa(CUES[i].nome);
   equipar(i);
 }
 function equipar(i) { taco = i; save.taco = i; gravar(); abrirLoja(); }
@@ -1143,6 +1147,7 @@ function fimDaJogada() {
     ganharXP(pontos * 6);
     fim = true;
     msg = pontos + "/5 bolas! +" + g + " 🪙" + (novo ? " 🏅" : "");
+    resInfo = { pontos: pontos, limpou: limpou, g: g, xp: pontos * 6, novo: novo, tac: tacadas };
   }
 }
 
@@ -1151,7 +1156,221 @@ function irTreino() {
   treino = true; novoJogo(); fechar();
 }
 
+var fx = [];
+function somPonto() {
+  bip(523, 0.12, 0.3);
+  setTimeout(() => bip(659, 0.12, 0.3), 90);
+  setTimeout(() => bip(784, 0.22, 0.3), 180);
+}
+function somFesta() {
+  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => bip(f, 0.25, 0.3), i * 110));
+}
+
+function efeitoPonto(x, y, cor) {
+  let k = cacapas[0];
+  for (const q of cacapas)
+    if (Math.hypot(x - q.x, y - q.y) < Math.hypot(x - k.x, y - k.y)) k = q;
+  const c = typeof corSkin === "function" ? corSkin(cor) : cor;
+  for (let i = 0; i < 24; i++) {
+    const a = Math.random() * Math.PI * 2, v = 1 + Math.random() * 4;
+    fx.push({ k: "p", x: k.x, y: k.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c: i % 3 ? c : "#fff", v: 1 });
+  }
+  fx.push({ k: "r", x: k.x, y: k.y, r: RC, v: 1, c: c });
+  fx.push({ k: "t", x: k.x + (W / 2 - k.x) * 0.15, y: k.y + (H / 2 - k.y) * 0.2, v: 1, tx: "+1" });
+  somPonto();
+}
+
+function desenharFx() {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const e = fx[i];
+    e.v -= e.k === "p" ? 0.03 : 0.02;
+    if (e.v <= 0) { fx.splice(i, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = e.v;
+    ctx.textBaseline = "middle";
+    if (e.k === "p") {
+      e.x += e.vx; e.y += e.vy; e.vy += 0.05;
+      ctx.fillStyle = e.c;
+      ctx.beginPath(); ctx.arc(e.x, e.y, 3, 0, 7); ctx.fill();
+    } else if (e.k === "r") {
+      e.r += 1.5;
+      ctx.strokeStyle = e.c; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, 7); ctx.stroke();
+    } else {
+      e.y -= 0.6;
+      ctx.fillStyle = "#ffe14d";
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(e.tx, e.x, e.y);
+    }
+    ctx.restore();
+  }
+}
+function desenhar0() { desenhar00(); desenharFx(); }
+
+function festa(txt) {
+  const cv = document.createElement("canvas");
+  cv.width = innerWidth; cv.height = innerHeight;
+  cv.style.cssText = "position:fixed;left:0;top:0;z-index:60;pointer-events:none";
+  document.body.appendChild(cv);
+  const g = cv.getContext("2d");
+  const cs = ["#f5c800", "#e02020", "#1e40ff", "#39ff14", "#ff7a00", "#e91e8c", "#ffffff"];
+  const ps = [];
+  for (let i = 0; i < 120; i++)
+    ps.push({ x: cv.width / 2, y: cv.height * 0.55, vx: (Math.random() - 0.5) * 14,
+      vy: -4 - Math.random() * 12, c: cs[i % cs.length], s: 5 + Math.random() * 5,
+      r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4 });
+  let t = 0;
+  somFesta();
+  (function anim() {
+    t++;
+    g.clearRect(0, 0, cv.width, cv.height);
+    for (const p of ps) {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.vx *= 0.99; p.r += p.vr;
+      g.save(); g.translate(p.x, p.y); g.rotate(p.r);
+      g.fillStyle = p.c; g.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+      g.restore();
+    }
+    if (txt) {
+      g.globalAlpha = Math.max(0, 1 - t / 100);
+      g.fillStyle = "#fff"; g.font = "bold 28px sans-serif"; g.textAlign = "center";
+      g.fillText("🎉 " + txt + " desbloqueado!", cv.width / 2, cv.height * 0.3 - t * 0.3);
+      g.globalAlpha = 1;
+    }
+    if (t < 110) requestAnimationFrame(anim); else cv.remove();
+  })();
+}
+
+function ehMinha(b) {
+  if (!b.num) return true;
+  const g = grupo[vez];
+  if (b.num === 8) return !!g && restantes(vez) === 0;
+  if (!g) return true;
+  return b.listrada === (g === "listrada");
+}
+
+function desenharGuia(dx, dy) {
+  desenharGuia0(dx, dy);
+  if (treino) return;
+  const m = Math.hypot(dx, dy);
+  if (!m) return;
+  const ux = dx / m, uy = dy / m;
+  let t = 1e9, alvo = null;
+  if (ux > 0) t = Math.min(t, (W - R - branca.x) / ux);
+  if (ux < 0) t = Math.min(t, (R - branca.x) / ux);
+  if (uy > 0) t = Math.min(t, (H - R - branca.y) / uy);
+  if (uy < 0) t = Math.min(t, (R - branca.y) / uy);
+  for (const b of bolas) {
+    if (b === branca) continue;
+    const fx2 = b.x - branca.x, fy2 = b.y - branca.y;
+    const p = fx2 * ux + fy2 * uy;
+    if (p <= 0) continue;
+    const q = fx2 * fx2 + fy2 * fy2 - p * p;
+    const r2 = 4 * R * R;
+    if (q > r2) continue;
+    const th = p - Math.sqrt(r2 - q);
+    if (th > 0 && th < t) { t = th; alvo = b; }
+  }
+  const lim = 100 + stt()[1] * 6;
+  if (!alvo || t > lim || ehMinha(alvo)) return;
+  const hx = branca.x + ux * t, hy = branca.y + uy * t;
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "#ff3030";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(hx, hy, R, 0, 7); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(hx - R * 0.7, hy - R * 0.7); ctx.lineTo(hx + R * 0.7, hy + R * 0.7);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(alvo.x, alvo.y, R + 3, 0, 7); ctx.stroke();
+  ctx.fillStyle = "#ff6060";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(alvo.num === 8 ? "Bola 8: só no final" : "Não é sua", alvo.x, alvo.y - R - 6);
+  ctx.restore();
+}
+
+var resInfo = null, resOK = false;
+const rs = document.createElement("div");
+rs.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);color:#fff;font-family:sans-serif;display:none;z-index:25;align-items:safe center;justify-content:center;overflow:auto";
+document.body.appendChild(rs);
+const rcss = document.createElement("style");
+rcss.textContent = "@keyframes pop{0%{transform:scale(0) rotate(-30deg);opacity:0}70%{transform:scale(1.4) rotate(8deg)}100%{transform:scale(1);opacity:1}}@keyframes sobe{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}.rl{animation:sobe .4s both;display:flex;justify-content:space-between;gap:24px;margin:4px 0;font-size:15px}.st{display:inline-block;font-size:40px;opacity:.25;filter:grayscale(1)}.st.on{animation:pop .5s both;opacity:1;filter:none}.rb{font-size:17px;padding:10px 18px;border:0;border-radius:12px;font-weight:bold;margin:4px;width:100%}";
+document.head.appendChild(rcss);
+
+function linha(a, b, d) {
+  return "<div class='rl' style='animation-delay:" + d + "s'><span>" + a + "</span><b>" + b + "</b></div>";
+}
+
+function resultadoLoop() {
+  if (!fim) { resOK = false; return; }
+  if (resOK) return;
+  resOK = true;
+  setTimeout(mostrarResultado, 900);
+}
+
+function mostrarResultado() {
+  if (!fim) return;
+  let tit, estr = 0, ln = "", moedas, xp, big = "";
+  if (treino) {
+    const r = resInfo || { pontos: 0, g: 0, xp: 0, tac: 0 };
+    estr = r.pontos >= 5 ? 3 : r.pontos >= 3 ? 2 : r.pontos >= 1 ? 1 : 0;
+    tit = estr === 3 ? "Perfeito!" : estr ? "Bom treino!" : "Tente de novo";
+    moedas = r.g; xp = r.xp;
+    ln += linha("🎱 Bolas encaçapadas", r.pontos + "/5 (+" + r.pontos * 10 + ")", 0.2);
+    if (r.limpou) ln += linha("✨ Mesa limpa", "+30", 0.4);
+    ln += linha("🎯 Tacadas usadas", r.tac + "/" + MAXT, 0.6);
+    ln += linha("⭐ XP ganho", "+" + xp, 0.8);
+    ln += linha(r.novo ? "🏅 Novo recorde!" : "🏅 Recorde", r.novo ? r.pontos : (save.rec || 0) + "/5", 1.0);
+  } else {
+    const gan = msg.includes("Jogador " + eu);
+    tit = gan ? "🏆 VITÓRIA!" : "Derrota";
+    moedas = gan ? 100 : 25; xp = gan ? 50 : 15;
+    big = "<div style='font-size:56px'>" + (gan ? "😎" : "😤") + "</div>";
+    ln += linha("🪙 Moedas", "+" + moedas, 0.2);
+    ln += linha("⭐ XP ganho", "+" + xp, 0.4);
+    ln += linha("💰 Saldo", save.moedas, 0.6);
+    estr = gan ? 3 : 0;
+  }
+  let st = "";
+  if (treino) for (let i = 0; i < 3; i++) st += "<span class='st' id='s" + i + "'>⭐</span>";
+  const bc = (online === 2) ? "" :
+    "<button class='rb' style='background:#f5c800;color:#111' onclick='resContinuar()'>▶ Continuar</button>";
+  rs.innerHTML =
+    "<div style='background:#10151c;border:2px solid #f5c800;border-radius:18px;padding:14px 22px;display:flex;gap:26px;align-items:center'>" +
+    "<div style='text-align:center;width:200px'><div style='font-size:24px;font-weight:bold'>" + tit + "</div>" +
+    big + st +
+    "<div style='font-size:24px;margin:6px 0'>🪙 +<span id='rc'>0</span></div>" + bc +
+    "<button class='rb' style='background:#2a3b4d;color:#fff' onclick='resMenu()'>🏠 Menu</button></div>" +
+    "<div style='text-align:center;min-width:230px'>" + ln + "<div style='margin-top:10px'>" + perfil() + "</div></div></div>";
+  rs.style.display = "flex";
+  for (let i = 0; i < estr && treino; i++)
+    setTimeout(() => { const e = document.getElementById("s" + i); if (e) e.className = "st on"; if (typeof bip === "function") bip(500 + i * 150, 0.15, 0.3); }, 400 + i * 450);
+  let n = 0;
+  const iv = setInterval(() => {
+    n += Math.max(1, Math.ceil(moedas / 25));
+    const e = document.getElementById("rc");
+    if (!e) { clearInterval(iv); return; }
+    if (n >= moedas) { n = moedas; clearInterval(iv); }
+    e.textContent = n;
+  }, 40);
+  if (estr === 3 && typeof festa === "function") festa(null);
+}
+
+function resContinuar() {
+  rs.style.display = "none";
+  if (torneioAtivo) { torneioAtivo = false; mostrarTorneio(); }
+  else novoJogo();
+}
+function resMenu() {
+  rs.style.display = "none";
+  if (online) { sairOnline(); novoJogo(); }
+  abrirMenu();
+}
+
 function loop() {
+
 
 
 
@@ -1163,6 +1382,7 @@ function loop() {
   torneioLoop();
   premio();
   premioXP();
+  resultadoLoop();
   if (online !== 2) for (let i = 0; i < SUB; i++) passo();
   netLoop();
   desenhar();
