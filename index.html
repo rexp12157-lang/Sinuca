@@ -1,7 +1,12 @@
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<div id="st" style="position:fixed;top:8px;left:100px;z-index:8;color:#fff;font:14px sans-serif;text-shadow:0 0 3px #000"></div>
 <style>body{margin:0;background:#222}</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <button onclick="var m=document.getElementById('menu');m.style.display=m.style.display=='block'?'none':'block'" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;z-index:8;background:rgba(0,0,0,0.85);padding:8px;text-align:center">
+<button onclick="criarSala()">🌐 Criar sala</button>
+<button onclick="entrarSala()">🔗 Entrar na sala</button>
+<button onclick="sairOnline();novoJogo()">❌ Sair do online</button><br>
 <button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button><br>
 <button onclick="mesaCor='#0a6b2e'">Mesa Verde</button>
 <button onclick="mesaCor='#12508f'">Mesa Azul</button>
@@ -91,7 +96,7 @@ function pos(e) {
 function comecar(e) {
   e.preventDefault();
   if (fim) { if (torneioAtivo) { torneioAtivo = false; mostrarTorneio(); } else novoJogo(); return; }
-  if (jogando || !parado() || vez === 2) return;
+  if (jogando || !parado() || vez !== eu) return;
   dedo = pos(e);
   if (posicionando) { arrastando = true; mover(e); return; }
   mirando = true;
@@ -110,6 +115,7 @@ function soltar(e) {
   e.preventDefault();
   if (arrastando) {
     arrastando = false;
+    if (online === 2) { enviar({ t: 'mao', x: branca.x, y: branca.y }); return; }
     if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
     return;
   }
@@ -277,13 +283,13 @@ function desenhar0() {
   ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Vez: Jogador " + vez + nomeGrupo(vez), W / 2, 12);
+  ctx.fillText("Vez: Jogador " + vez + (online && vez === eu ? " (você)" : "") + nomeGrupo(vez), W / 2, 12);
   if (posicionando) ctx.fillText("Bola na mão: arraste a branca", W / 2, 34);
   ctx.font = "14px sans-serif";
   ctx.textBaseline = "bottom";
   for (const j of [1, 2]) {
     const f = grupo[j] ? 7 - restantes(j) : 0;
-    ctx.fillText((j === 1 ? "Você" : "Bot") + ": " + f + "/7",
+    ctx.fillText((online ? "J" + j : (j === 1 ? "Você" : "Bot")) + ": " + f + "/7",
                  j === 1 ? 160 : 480, H - 12);
   }
   ctx.textBaseline = "top";
@@ -343,6 +349,7 @@ function botJoga() {
 }
 
 function botLoop() {
+  if (online) return;
   if (vez === 2 && !jogando && !fim && parado()) {
     botEspera++;
     if (botEspera > 60) { botEspera = 0; botJoga(); }
@@ -577,7 +584,7 @@ let ang = 0, potencia = 0.5, girando = false;
 let ult = { x: 0, y: 0 }, tm = null;
 
 function atualizarMira() {
-  mirando = !jogando && !fim && !posicionando && vez === 1 && parado();
+  mirando = !jogando && !fim && !posicionando && vez === eu && parado();
   if (mirando) {
     const d = 20 + potencia * 130;
     dedo = { x: branca.x - Math.cos(ang) * d, y: branca.y - Math.sin(ang) * d };
@@ -586,6 +593,7 @@ function atualizarMira() {
 
 function bater() {
   if (!mirando) return;
+  if (online === 2) { enviar({ t: 'tacada', a: ang, p: potencia, sx: spinX, sy: spinY }); return; }
   const f = potencia * 15;
   branca.vx = Math.cos(ang) * f;
   branca.vy = Math.sin(ang) * f;
@@ -732,14 +740,108 @@ function efeitoBatida(a, b) {
   w.vy += w.ey * w.sy * 3;
 }
 
+let online = 0, eu = 1, peer = null, conn = null;
+function aviso(t) { document.getElementById("st").textContent = t; }
+function enviar(m) { try { if (conn && conn.open) conn.send(m); } catch (e) {} }
+
+function ligar(c) {
+  conn = c;
+  c.on("data", receber);
+  c.on("close", () => aviso("Amigo desconectou"));
+}
+
+function sairOnline() {
+  online = 0; eu = 1;
+  try { if (conn) conn.close(); if (peer) peer.destroy(); } catch (e) {}
+  conn = null; peer = null; aviso("");
+}
+
+function criarSala() {
+  sairOnline();
+  const cod = Math.random().toString(36).slice(2, 6).toUpperCase();
+  aviso("Criando sala...");
+  peer = new Peer("sinuca-" + cod);
+  peer.on("error", e => aviso("Erro: " + e.type));
+  peer.on("open", () => aviso("Sala " + cod + " - esperando amigo"));
+  peer.on("connection", c => {
+    ligar(c);
+    c.on("open", () => {
+      online = 1; eu = 1; novoJogo();
+      aviso("Sala " + cod + " - você é o Jogador 1");
+    });
+  });
+}
+
+function entrarSala() {
+  const cod = prompt("Código da sala:");
+  if (!cod) return;
+  sairOnline();
+  aviso("Conectando...");
+  peer = new Peer();
+  peer.on("error", e => aviso("Erro: " + e.type));
+  peer.on("open", () => {
+    const c = peer.connect("sinuca-" + cod.trim().toUpperCase(), { reliable: true });
+    ligar(c);
+    c.on("open", () => { online = 2; eu = 2; aviso("Conectado - você é o Jogador 2"); });
+  });
+}
+
+function receber(m) {
+  if (m.t === "estado") aplicarEstado(m);
+  else if (m.t === "tacada" && online === 1) aplicarTacada(m);
+  else if (m.t === "mao" && online === 1) aplicarMao(m);
+}
+
+function aplicarEstado(m) {
+  if (online !== 2) return;
+  const px = branca.x, py = branca.y;
+  bolas = m.b.map(a => ({
+    x: a[0], y: a[1], vx: a[2], vy: a[3],
+    num: a[4] || undefined,
+    cor: a[4] ? cores[(a[4] - 1) % 8] : "white",
+    listrada: a[4] > 8,
+  }));
+  branca = bolas.find(b => !b.num);
+  if (arrastando) { branca.x = px; branca.y = py; }
+  vez = m.v; jogando = m.j; fim = m.f; msg = m.m;
+  posicionando = m.p; grupo = m.g; falta = m.fa;
+}
+
+function aplicarTacada(m) {
+  if (vez !== 2 || jogando || fim || !parado() || posicionando) return;
+  const f = m.p * 15;
+  branca.vx = Math.cos(m.a) * f;
+  branca.vy = Math.sin(m.a) * f;
+  branca.sx = m.sx; branca.sy = m.sy;
+  branca.ex = Math.cos(m.a); branca.ey = Math.sin(m.a); branca.livre = true;
+  jogando = true; caiu = []; falta = false;
+}
+
+function aplicarMao(m) {
+  if (vez !== 2 || !posicionando) return;
+  branca.x = Math.max(R, Math.min(W - R, m.x));
+  branca.y = Math.max(R, Math.min(H - R, m.y));
+  if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
+}
+
+function netLoop() {
+  if (online !== 1) return;
+  const r = (v, n) => Math.round(v * n) / n;
+  enviar({ t: "estado",
+    b: bolas.map(b => [r(b.x, 10), r(b.y, 10), r(b.vx, 100), r(b.vy, 100), b.num || 0]),
+    v: vez, j: jogando, f: fim, m: msg, p: posicionando, g: grupo, fa: falta });
+}
+
 function loop() {
+
 
 
 
   botLoop();
   atualizarMira();
   torneioLoop();
-  for (let i = 0; i < SUB; i++) passo();
+  if (online !== 2) for (let i = 0; i < SUB; i++) passo();
+  netLoop();
   desenhar();
   requestAnimationFrame(loop);
 }
