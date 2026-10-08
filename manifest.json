@@ -1,0 +1,13 @@
+{
+  "name": "Sinuca",
+  "short_name": "Sinuca",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#07140d",
+  "theme_color": "#0a6b2e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
