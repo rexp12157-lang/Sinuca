@@ -39,7 +39,7 @@
 
 <script>
 const c = document.getElementById("c");
-const ctx = c.getContext("2d");
+const ctx = c.getContext("2d"); const S = Math.min(window.devicePixelRatio || 1, 3); c.width = 704 * S; c.height = 424 * S; ctx.scale(S, S);
 const W = 640, H = 360, R = 10, RC = 23;
 const cacapas = [
   { x: 2, y: 2 }, { x: W - 2, y: 2 },
@@ -86,8 +86,8 @@ function pos(e) {
   const r = c.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : e;
   return {
-    x: (t.clientX - r.left) * (c.width / r.width) - M,
-    y: (t.clientY - r.top) * (c.height / r.height) - M,
+    x: (t.clientX - r.left) * (704 / r.width) - M,
+    y: (t.clientY - r.top) * (424 / r.height) - M,
   };
 }
 
@@ -1640,7 +1640,7 @@ var og = ov.getContext("2d");
   og.setTransform(1, 0, 0, 1, 0, 0);
   og.clearRect(0, 0, ov.width, ov.height);
   if (tacoPend && Date.now() - tacoPend.t < 80) {
-    var r = c.getBoundingClientRect(), k = r.width / c.width;
+    var r = c.getBoundingClientRect(), k = r.width / 704;
     og.setTransform(dpr * k, 0, 0, dpr * k, dpr * (r.left + M * k), dpr * (r.top + M * k));
     var m = Math.hypot(tacoPend.dx, tacoPend.dy) || 1;
     var ux = -tacoPend.dx / m, uy = -tacoPend.dy / m;
