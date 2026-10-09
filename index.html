@@ -210,6 +210,7 @@ function fimDaJogada0() {
 function checarCacapas() {
   for (let i = bolas.length - 1; i >= 0; i--) {
     const b = bolas[i];
+    if (posicionando && b === branca) continue;
     if (cacapas.some(k => Math.hypot(b.x - k.x, b.y - k.y) < RC)) {
       if (b === branca) {
         b.x = 160; b.y = 180; b.vx = 0; b.vy = 0;
@@ -227,6 +228,7 @@ function checarCacapas() {
 const SUB = 4, FR = Math.pow(0.985, 1 / SUB);
 function passo() {
   for (const b of bolas) {
+    if (posicionando && b === branca) { b.vx = 0; b.vy = 0; }
     b.x += b.vx / SUB; b.y += b.vy / SUB;
     if (b.sx && b.livre) curva(b);
     b.vx *= FR; b.vy *= FR;
@@ -237,8 +239,10 @@ function passo() {
     if (b.y > H - R) { b.y = H - R; b.vy *= -1; }
   }
   for (let i = 0; i < bolas.length; i++)
-    for (let j = i + 1; j < bolas.length; j++)
+    for (let j = i + 1; j < bolas.length; j++) {
+      if (posicionando && (bolas[i] === branca || bolas[j] === branca)) continue;
       colidir(bolas[i], bolas[j]);
+    }
   checarCacapas();
   if (jogando && !fim && parado()) fimDaJogada();
 }
