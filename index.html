@@ -617,7 +617,8 @@ function comecar(e) {
     else novoJogo();
     return;
   }
-  if (jogando || !parado() || vez === 2) return;
+  if (jogando || vez !== eu) return;
+  if (!posicionando && !parado()) return;
   ult = pos(e);
   if (posicionando) { arrastando = true; mover(e); return; }
   girando = true;
