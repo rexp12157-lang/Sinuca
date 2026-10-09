@@ -630,6 +630,7 @@ function mover(e) {
   if (arrastando) {
     branca.x = Math.max(R, Math.min(W - R, p.x));
     branca.y = Math.max(R, Math.min(H - R, p.y));
+    if (online === 2) enviar({ t: 'mao', x: branca.x, y: branca.y, mv: 1 });
     return;
   }
   if (girando) {
@@ -642,6 +643,7 @@ function soltar(e) {
   e.preventDefault();
   if (arrastando) {
     arrastando = false;
+    if (online === 2) { window.segura = Date.now() + 1000; const fx = branca.x, fy = branca.y; enviar({ t: 'mao', x: fx, y: fy }); setTimeout(() => enviar({ t: 'mao', x: fx, y: fy }), 200); return; }
     if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
     return;
   }
@@ -807,7 +809,7 @@ function aplicarEstado(m) {
   }));
   branca = bolas.find(b => !b.num);
   for (const a of ant) if (a.num && !bolas.some(n => n.num === a.num)) efeitoPonto(a.x, a.y, a.cor);
-  if (arrastando) { branca.x = px; branca.y = py; }
+  if (arrastando || Date.now() < (window.segura || 0)) { branca.x = px; branca.y = py; }
   vez = m.v; jogando = m.j; fim = m.f; msg = m.m;
   posicionando = m.p; grupo = m.g; falta = m.fa;
 }
