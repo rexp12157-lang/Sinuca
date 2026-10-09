@@ -897,6 +897,7 @@ const CUES = [
   { nome: "Rosa", preco: 3000, a: "#ffd1f0", b: "#2f9e44", r: "#ffffff", o: 10 },
   { nome: "Lua", preco: 3500, a: "#ffffff", b: "#3a5f9e", r: "#fff3a0", o: 11 },
   { nome: "Diamante", preco: 5000, a: "#e8fbff", b: "#7a4fd0", r: "#7ad8ff", o: 12 },
+  { nome: "Dragão", preco: 1100, a: "#2a2a2a", b: "#050505", r: "#e02020", o: 13 },
 ];
 
 function drawCue0(g, x, y, ux, uy, len, k) {
@@ -1064,7 +1065,7 @@ function voltarMenu() { fecharOpc(); abrirMenu(); }
 const ST = [
   [30, 30, 30], [40, 40, 45], [50, 45, 50], [65, 50, 55],
   [55, 65, 65], [60, 70, 60], [80, 75, 70], [95, 90, 90],
-  [85, 80, 80], [88, 85, 85], [90, 88, 90], [93, 92, 92], [100, 100, 100],
+  [85, 80, 80], [88, 85, 85], [90, 88, 90], [93, 92, 92], [100, 100, 100], [70, 68, 66],
 ];
 function stt() { return ST[taco] || ST[0]; }
 function fM() { return 0.9 + stt()[0] / 100 * 0.3; }
@@ -1590,13 +1591,84 @@ function drawOrn(g, t, L) {
   ornC(g, t);
   g.restore();
 }
+function ornDragao(g, len) {
+  const T = Date.now();
+  const w = x => 2.5 + (x - 10) / (len - 10) * 3;
+  g.lineCap = "round"; g.lineJoin = "round";
+  g.shadowColor = "#ff2020"; g.shadowBlur = 6;
+  g.strokeStyle = "#e02020"; g.lineWidth = 1.3;
+  g.beginPath();
+  for (let x = 44; x <= len - 8; x += 2) {
+    const y = Math.sin(x * 0.28) * w(x) * 0.55;
+    if (x === 44) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.stroke();
+  g.shadowBlur = 0;
+  g.strokeStyle = "rgba(224,32,32,0.55)"; g.lineWidth = 0.9;
+  for (let x = 50; x < len - 14; x += 8) {
+    const h = w(x) * 0.8;
+    g.beginPath(); g.moveTo(x, -h); g.lineTo(x + 4, 0); g.lineTo(x, h); g.stroke();
+  }
+  g.fillStyle = "#b01010";
+  for (let i = 0; i < 4; i++) {
+    const x = 38 + i * 6, sp = 5 - i;
+    for (const d of [-1, 1]) {
+      g.beginPath(); g.moveTo(x, d * 3); g.lineTo(x + 3, d * (3 + sp)); g.lineTo(x + 5, d * 3); g.closePath(); g.fill();
+    }
+  }
+  g.shadowColor = "#ff2020"; g.shadowBlur = 10;
+  g.fillStyle = "#d9cdb8";
+  for (const d of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(22, d * 7); g.quadraticCurveTo(30, d * 17, 42, d * 15); g.quadraticCurveTo(33, d * 11, 30, d * 6);
+    g.closePath(); g.fill();
+  }
+  const q = g.createLinearGradient(0, -8, 0, 8);
+  q.addColorStop(0, "#5a0a0a"); q.addColorStop(0.5, "#c01818"); q.addColorStop(1, "#3a0505");
+  g.fillStyle = q;
+  g.beginPath();
+  g.moveTo(1, -2); g.lineTo(13, -6); g.lineTo(25, -8); g.lineTo(35, -4);
+  g.lineTo(35, 4); g.lineTo(25, 8); g.lineTo(13, 6); g.lineTo(1, 2);
+  g.closePath(); g.fill();
+  g.strokeStyle = "#ff6a4a"; g.lineWidth = 0.8; g.stroke();
+  g.shadowBlur = 0;
+  g.strokeStyle = "#1a0000"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(1, 0); g.lineTo(15, 1.2); g.stroke();
+  g.fillStyle = "#ffffff";
+  for (let i = 0; i < 3; i++) {
+    const x = 4 + i * 4;
+    g.beginPath(); g.moveTo(x, -2.8); g.lineTo(x + 1.6, -2.8); g.lineTo(x + 0.8, -0.6); g.fill();
+    g.beginPath(); g.moveTo(x + 1, 3.4); g.lineTo(x + 2.6, 3.4); g.lineTo(x + 1.8, 1.6); g.fill();
+  }
+  g.shadowColor = "#ffb000"; g.shadowBlur = 8; g.fillStyle = "#ffd23a";
+  for (const d of [-1, 1]) { g.beginPath(); g.arc(15, d * 3.4, 1.5, 0, 7); g.fill(); }
+  g.shadowBlur = 0; g.fillStyle = "#200000";
+  for (const d of [-1, 1]) { g.beginPath(); g.arc(3.2, d * 1.1, 0.6, 0, 7); g.fill(); }
+  g.shadowColor = "#ff6a00"; g.shadowBlur = 6;
+  for (let i = 0; i < 9; i++) {
+    const t = (T / 800 + i / 9) % 1;
+    const px = 1 - t * 24, py = Math.sin(i * 2.3 + t * 7) * 7 * t;
+    g.globalAlpha = 1 - t;
+    g.fillStyle = i % 2 ? "#ff7a1a" : "#ffd23a";
+    g.beginPath(); g.arc(px, py, 2 - t * 1.4, 0, 7); g.fill();
+  }
+  for (let i = 0; i < 6; i++) {
+    const t = (T / 1000 + i * 0.37) % 1;
+    const px = 56 + i * ((len - 70) / 6), py = (i % 2 ? -1 : 1) * (w(px) + t * 9);
+    g.globalAlpha = 1 - t;
+    g.fillStyle = "#ff4a1a";
+    g.beginPath(); g.arc(px, py, 1.3 - t * 0.6, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+}
+
 function drawCue(g, x, y, ux, uy, len, k) {
   drawCue0(g, x, y, ux, uy, len, k);
   if (!k.o) return;
   g.save();
   g.translate(x, y);
   g.rotate(Math.atan2(uy, ux));
-  drawOrn(g, k.o, len);
+  if (k.o === 13) ornDragao(g, len); else drawOrn(g, k.o, len);
   g.restore();
 }
 
