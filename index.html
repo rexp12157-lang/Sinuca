@@ -48,7 +48,7 @@ function marcarOpc(){document.querySelectorAll('#menu button[data-g]').forEach(f
 </div>
 </div>
 <canvas id="c" width="704" height="424"
- style="background:#0a6b2e; touch-action:none; height:calc(100dvh - 6px); width:auto; max-width:calc(100vw - 130px); display:block; margin:0 auto"></canvas>
+ style="background:#0a6b2e; touch-action:none; height:calc(100dvh - 52px); width:auto; max-width:calc(100vw - 130px); display:block; margin:48px auto 0"></canvas>
 <div id="spin" style="position:fixed;bottom:10px;right:64px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bbb);border:2px solid #333;z-index:6;touch-action:none;opacity:0.9">
 <div id="pt" style="position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:#e02020;left:50%;top:50%"></div>
 </div>
@@ -337,7 +337,7 @@ function desenhar00() {
   if (posicionando) ctx.fillText("Bola na mão: arraste a branca", W / 2, 34);
   ctx.font = "14px sans-serif";
   ctx.textBaseline = "bottom";
-  for (const j of (treino ? [] : [1, 2])) {
+  for (const j of []) {
     const f = grupo[j] ? 7 - restantes(j) : 0;
     ctx.fillText((online ? "J" + j : (j === 1 ? "Você" : "Bot")) + ": " + f + "/7",
                  j === 1 ? 160 : 480, H - 12);
@@ -1721,4 +1721,64 @@ function loop() {
 }
 loop();
 abrirMenu();
+</script>
+<script>
+(function(){
+var cores={1:"#f5c400",2:"#1d4ed8",3:"#dc2626",4:"#7c3aed",5:"#ea580c",6:"#15803d",7:"#7f1d1d"};
+var st=document.createElement("style");
+st.textContent="#hud{position:fixed;top:3px;left:100px;right:100px;height:40px;z-index:3;display:flex;justify-content:space-between;gap:8px;pointer-events:none;font-family:sans-serif}.hp{flex:1;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.65);border:2px solid #30363d;border-radius:10px;padding:3px 8px;color:#fff;font-size:13px;min-width:0}.hp.on{border-color:#ffdf00}.hp.d{flex-direction:row-reverse}.hp b{font-weight:500;white-space:nowrap}.hs{background:#d29922;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}.hb{width:16px;height:16px;border-radius:50%;border:1px solid #000;flex:none}.hb.x{opacity:.2}";
+document.head.appendChild(st);
+var hud=document.createElement("div");hud.id="hud";document.body.appendChild(hud);
+var ant="";
+function nivelAtual(){try{var xp=(typeof save!=="undefined"&&save&&save.xp)||0;return nivel(xp);}catch(e){return 1;}}
+function bolaHTML(n){
+  var c=cores[n>8?n-8:n];
+  var s=n>8?"linear-gradient(#fff 0 25%,"+c+" 25% 75%,#fff 75%)":c;
+  var x=bolas.some(function(b){return b.num===n;})?"":" x";
+  return '<span class="hb'+x+'" style="background:'+s+'"></span>';
+}
+function jog(j){
+  var g=grupo[j],h="",ini=g==="listrada"?9:1;
+  for(var i=0;i<7;i++){h+=g?bolaHTML(ini+i):'<span class="hb x" style="background:#888"></span>';}
+  var nome=online?"Jogador "+j:(j===1?"Você":"Bot");
+  var est=(!online&&j===1)?'<span class="hs">'+nivelAtual()+'</span>':"";
+  return '<div class="hp'+(j===2?" d":"")+(vez===j?" on":"")+'">'+est+'<b>'+nome+'</b><span style="display:flex;gap:3px">'+h+'</span></div>';
+}
+setInterval(function(){
+  try{
+    if(treino||!bolas||!grupo){hud.style.display="none";return;}
+    hud.style.display="flex";
+    var h=jog(1)+jog(2);
+    if(h!==ant){hud.innerHTML=h;ant=h;}
+  }catch(e){}
+},200);
+})();
+</script>
+<script>
+(function(){
+var cores={1:"#f5c400",2:"#1d4ed8",3:"#dc2626",4:"#7c3aed",5:"#ea580c",6:"#15803d",7:"#7f1d1d"};
+var st=document.createElement("style");
+st.textContent="#trilho{position:fixed;top:60px;right:46px;max-height:40vh;z-index:3;display:none;flex-flow:column wrap;align-content:flex-end;gap:2px;padding:5px;background:rgba(0,0,0,.65);border:2px solid #30363d;border-radius:12px;pointer-events:none;font-family:sans-serif}.tb{width:15px;height:15px;border-radius:50%;border:1px solid #000;color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;flex:none;text-shadow:0 0 2px #000}";
+document.head.appendChild(st);
+var t=document.createElement("div");t.id="trilho";document.body.appendChild(t);
+var lista=[],ant="";
+function bola(n){
+  var c=n===8?"#111":cores[n>8?n-8:n];
+  var s=n>8?"linear-gradient(#fff 0 25%,"+c+" 25% 75%,#fff 75%)":c;
+  return '<span class="tb" style="background:'+s+'">'+n+'</span>';
+}
+setInterval(function(){
+  try{
+    if(treino||!bolas){t.style.display="none";return;}
+    var pres={};
+    bolas.forEach(function(b){if(b.num)pres[b.num]=1;});
+    if(Object.keys(pres).length>=15){lista=[];}
+    else{for(var n=1;n<=15;n++){if(!pres[n]&&lista.indexOf(n)<0)lista.push(n);}}
+    if(!lista.length){t.style.display="none";return;}
+    t.style.display="flex";
+    var h=lista.map(bola).join("");
+    if(h!==ant){t.innerHTML=h;ant=h;}
+  }catch(e){}
+},200);
+})();
 </script>
