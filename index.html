@@ -20,7 +20,6 @@ function marcarOpc(){document.querySelectorAll('#menu button[data-g]').forEach(f
 <button onclick="criarSala()">🌐 Criar sala</button>
 <button onclick="entrarSala()">🔗 Entrar na sala</button>
 <button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button>
-<button onclick="sairOnline();novoJogo()">❌ Sair do online</button>
 </div>
 <div class="sec">Dificuldade do bot</div>
 <div class="row">
@@ -35,12 +34,6 @@ function marcarOpc(){document.querySelectorAll('#menu button[data-g]').forEach(f
 <button data-g="mesa" data-v="#12508f" onclick="mesaCor='#12508f';marcarOpc()">Azul</button>
 <button data-g="mesa" data-v="#8f1d1d" onclick="mesaCor='#8f1d1d';marcarOpc()">Vermelha</button>
 <button data-g="mesa" data-v="#5b2a86" onclick="mesaCor='#5b2a86';marcarOpc()">Roxa</button>
-</div>
-<div class="sec">Bolas</div>
-<div class="row">
-<button data-g="bola" data-v="0" onclick="skinBola=0;marcarOpc()">Clássicas</button>
-<button data-g="bola" data-v="1" onclick="skinBola=1;marcarOpc()">Neon</button>
-<button data-g="bola" data-v="2" onclick="skinBola=2;marcarOpc()">Pastel</button>
 </div>
 <div class="row" style="margin-top:12px">
 <button onclick="fecharOpc()">✅ Fechar</button>
@@ -1874,22 +1867,4 @@ function menuOnline(){
 }
 abrirMenu();
 
-</script>
-<button id="btnFull" style="position:fixed;top:6px;right:6px;z-index:99999;width:44px;height:44px;border:0;border-radius:12px;background:#000b;color:#fff;font-size:22px">⛶</button>
-<script>
-(function(){
-  const b = document.getElementById('btnFull');
-  const el = document.documentElement;
-  const enter = el.requestFullscreen || el.webkitRequestFullscreen;
-  const exit = document.exitFullscreen || document.webkitExitFullscreen;
-  if (!enter) { b.style.display = 'none'; return; }
-  b.onclick = async () => {
-    try {
-      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        await enter.call(el);
-        if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
-      } else { exit.call(document); }
-    } catch (e) {}
-  };
-})();
 </script>
