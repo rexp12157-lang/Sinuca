@@ -1782,3 +1782,21 @@ setInterval(function(){
 },200);
 })();
 </script>
+<button id="btnFull" style="position:fixed;top:6px;right:6px;z-index:99999;width:44px;height:44px;border:0;border-radius:12px;background:#000b;color:#fff;font-size:22px">⛶</button>
+<script>
+(function(){
+  const b = document.getElementById('btnFull');
+  const el = document.documentElement;
+  const enter = el.requestFullscreen || el.webkitRequestFullscreen;
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if (!enter) { b.style.display = 'none'; return; }
+  b.onclick = async () => {
+    try {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        await enter.call(el);
+        if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+      } else { exit.call(document); }
+    } catch (e) {}
+  };
+})();
+</script>
