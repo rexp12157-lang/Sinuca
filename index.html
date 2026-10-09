@@ -27,7 +27,7 @@
 </div>
 <canvas id="c" width="704" height="424"
  style="background:#0a6b2e; touch-action:none; height:calc(100dvh - 6px); width:auto; max-width:calc(100vw - 130px); display:block; margin:0 auto"></canvas>
-<div id="spin" style="position:fixed;bottom:4px;left:50%;margin-left:-22px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bbb);border:2px solid #333;z-index:6;touch-action:none;opacity:0.9">
+<div id="spin" style="position:fixed;bottom:10px;right:64px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bbb);border:2px solid #333;z-index:6;touch-action:none;opacity:0.9">
 <div id="pt" style="position:absolute;width:10px;height:10px;margin:-5px;border-radius:50%;background:#e02020;left:50%;top:50%"></div>
 </div>
 <style>
@@ -40,11 +40,11 @@
 <script>
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
-const W = 640, H = 360, R = 10, RC = 26;
+const W = 640, H = 360, R = 10, RC = 23;
 const cacapas = [
-  { x: 0, y: 0 }, { x: W, y: 0 },
-  { x: W / 2, y: 0 }, { x: W / 2, y: H },
-  { x: 0, y: H }, { x: W, y: H },
+  { x: 2, y: 2 }, { x: W - 2, y: 2 },
+  { x: W / 2, y: -6 }, { x: W / 2, y: H + 6 },
+  { x: 2, y: H - 2 }, { x: W - 2, y: H - 2 },
 ];
 const ordem = [1, 9, 2, 10, 8, 3, 4, 11, 5, 12, 13, 6, 14, 7, 15];
 const cores = ["#f5c800","#1e40ff","#e02020","#6a1b9a","#ff7a00","#0a8a3a","#8b1a1a","#111111"];
@@ -105,6 +105,7 @@ function mover(e) {
     const p = pos(e);
     branca.x = Math.max(R, Math.min(W - R, p.x));
     branca.y = Math.max(R, Math.min(H - R, p.y));
+    if (online === 2) enviar({ t: 'mao', x: branca.x, y: branca.y, mv: 1 });
     return;
   }
   if (mirando) dedo = pos(e);
@@ -824,6 +825,7 @@ function aplicarMao(m) {
   if (vez !== 2 || !posicionando) return;
   branca.x = Math.max(R, Math.min(W - R, m.x));
   branca.y = Math.max(R, Math.min(H - R, m.y));
+  if (m.mv) return;
   if (!bolas.some(b => b !== branca && Math.hypot(b.x - branca.x, b.y - branca.y) < R * 2)) posicionando = false;
 }
 
@@ -894,7 +896,14 @@ try {
 } catch (e) {}
 taco = save.taco;
 function gravar() {
-  try { localStorage.setItem("sinuca_save", JSON.stringify(save)); } catch (e) {}
+  try {
+    localStorage.setItem("sinuca_save", JSON.stringify(save));
+    return true;
+  } catch (e) {
+    console.error("Erro ao salvar:", e);
+    alert("Não foi possível salvar o jogo. Verifique o armazenamento.");
+    return false;
+  }
 }
 
 let pago = false;
@@ -932,11 +941,36 @@ function abrirLoja() {
   });
 }
 function comprar(i) {
-  if (save.moedas < CUES[i].preco) { alert("Moedas insuficientes. Ganhe partidas!"); return; }
+  if (!CUES[i]) return;
+  if (!Array.isArray(save.donos)) save.donos = [0];
+  if (save.donos.includes(i)) {
+    alert("Você já possui esse taco!");
+    return;
+  }
+  if (save.moedas < CUES[i].preco) {
+    alert("Moedas insuficientes. Ganhe partidas!");
+    return;
+  }
+
+  const moedasAntigas = save.moedas;
+  const tacoAntigo = save.taco;
+  const donosAntigos = [...save.donos];
+
   save.moedas -= CUES[i].preco;
   save.donos.push(i);
+  save.taco = i;
+  taco = i;
+
+  if (!gravar()) {
+    save.moedas = moedasAntigas;
+    save.taco = tacoAntigo;
+    save.donos = donosAntigos;
+    taco = tacoAntigo;
+    return;
+  }
+
   festa(CUES[i].nome);
-  equipar(i);
+  abrirLoja();
 }
 function equipar(i) { taco = i; save.taco = i; gravar(); abrirLoja(); }
 function fecharLoja() { loja.style.display = "none"; abrirMenu(); }
