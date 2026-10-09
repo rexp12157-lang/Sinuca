@@ -1781,6 +1781,99 @@ setInterval(function(){
   }catch(e){}
 },200);
 })();
+
+var BTCSS = `
+&{box-sizing:border-box;--brass:#f4c61a;--brass2:#a8860f;--cream:#efe3c8;color:var(--cream);font-family:'Barlow Condensed','Arial Narrow',sans-serif;overflow:hidden;padding:max(14px,env(safe-area-inset-top)) 4vw max(14px,env(safe-area-inset-bottom));grid-template-columns:minmax(0,.9fr) minmax(0,1.5fr);grid-template-rows:auto 1fr;gap:1.5vh 3.5vw;background:radial-gradient(ellipse 50% 70% at 63% -8%,rgba(255,226,140,.34),transparent 72%),repeating-linear-gradient(90deg,rgba(240,230,190,.16) 0 2px,transparent 2px 8vh),repeating-linear-gradient(0deg,rgba(240,230,190,.16) 0 2px,transparent 2px 8vh),#0d4636}
+&:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(0,0,0,.65));pointer-events:none}
+& *{box-sizing:border-box;margin:0}
+header{grid-column:1/-1;position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;margin-top:5vh}
+.flags{position:absolute;top:0;left:0;right:0;height:clamp(24px,5.5vh,44px);z-index:1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='36'%3E%3Cpath d='M0 3Q80 12 160 3' fill='none' stroke='%23e8e0c0' stroke-width='1.5'/%3E%3Cpath d='M6 5h16l-8 20z' fill='%2300a651'/%3E%3Cpath d='M46 7h16l-8 20z' fill='%23fedd00'/%3E%3Cpath d='M86 7h16l-8 20z' fill='%232a5caa'/%3E%3Cpath d='M126 5h16l-8 20z' fill='%23f6f1e4'/%3E%3C/svg%3E") repeat-x;background-size:auto 100%}
+.neon{padding:.7vh 1.8vh;border:2px solid #ff5a78;border-radius:6px;font:500 clamp(14px,3.8vh,24px)/1.1 Oswald,sans-serif;letter-spacing:.3em;color:#ffe0e5;text-shadow:0 0 6px #ff2d55,0 0 16px #ff2d55;box-shadow:0 0 10px #ff2d55,inset 0 0 10px rgba(255,45,85,.55);animation:btflick 4s infinite}
+@keyframes btflick{0%,92%,100%{opacity:1}94%{opacity:.55}96%{opacity:1}98%{opacity:.7}}
+.fiado{position:absolute;left:4vw;bottom:2.5vh;z-index:3;transform:rotate(-2deg);padding:.8vh 1.6vh;background:#17251e;border:4px solid #7a5230;border-radius:3px;font:500 clamp(11px,2.5vh,15px)/1.3 Oswald,sans-serif;letter-spacing:.14em;color:#ece8d6;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.5)}
+.fiado small{display:block;font-size:.8em;letter-spacing:.08em;color:#b8c4b4}
+.logo{font:700 clamp(22px,6vh,38px)/1 Oswald,sans-serif;letter-spacing:.34em;color:var(--cream);text-shadow:0 1px 0 #000}
+.sub{margin-top:.8vh;font-size:clamp(11px,2.4vh,14px);letter-spacing:.3em;color:var(--brass);text-transform:uppercase;border-top:1px solid #3a2a1a;padding-top:.7vh;display:inline-block}
+.lamp{position:absolute;top:0;left:63%;width:0;height:0;transform-origin:0 0;animation:btsway 5s ease-in-out infinite;z-index:2}
+.lamp .cord{position:absolute;left:-1px;top:-2px;width:2px;height:6vh;background:#000}
+.lamp .shade{position:absolute;left:-11vh;top:5.5vh;width:22vh;height:8vh;background:linear-gradient(#2f6bbd,#173a73);clip-path:polygon(32% 0,68% 0,100% 100%,0 100%)}
+.lamp .band{position:absolute;left:-11vh;top:12.7vh;width:22vh;height:.9vh;background:var(--brass);border-radius:1px}
+.lamp .bulb{position:absolute;left:-2.4vh;top:13.2vh;width:4.8vh;height:2.4vh;border-radius:0 0 50% 50%;background:#fff1c4;box-shadow:0 0 4vh 2vh rgba(255,200,110,.55)}
+@keyframes btsway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+.card{position:relative;z-index:2;align-self:center;padding:2.4vh 2.6vh;border-radius:6px;background:linear-gradient(#124a28,#0a2e19);border:6px solid #5b3a1a;box-shadow:inset 0 0 0 1px #2a1a0c,inset 0 0 34px rgba(0,0,0,.6),0 10px 26px rgba(0,0,0,.6)}
+.lbl{font-size:clamp(11px,2.3vh,13px);letter-spacing:.3em;color:var(--brass);text-transform:uppercase}
+.rank{display:flex;align-items:center;gap:1.2vh;margin-top:.6vh}
+.rank b{font:500 clamp(16px,4.2vh,26px)/1 Oswald,sans-serif;letter-spacing:.14em}
+.chev{display:flex;flex-direction:column;gap:.2vh}
+.chev i{width:1.5vh;height:1.5vh;border-right:3px solid var(--brass);border-bottom:3px solid var(--brass);transform:rotate(45deg);margin-top:-.7vh}
+.lvl{display:flex;align-items:baseline;gap:1.2vh;margin-top:1.4vh}
+.lvl strong{font:700 clamp(34px,10vh,64px)/1 Oswald,sans-serif}
+.lvl span{font-size:clamp(12px,2.6vh,15px);letter-spacing:.24em;color:#a9c4ae}
+.rail{position:relative;display:flex;gap:.9vh;margin:1.6vh 0 .7vh;align-items:center}
+.rail:before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--brass2);transform:translateY(-50%)}
+.rail i{position:relative;width:clamp(10px,2.7vh,17px);height:clamp(10px,2.7vh,17px);border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.6) 0 10%,transparent 32%),#9a2a1a;box-shadow:inset -2px -3px 4px rgba(0,0,0,.5)}
+.rail i.off{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.2) 0 10%,transparent 32%),#3a2a20}
+.xp{font-size:clamp(11px,2.4vh,14px);color:#a9c4ae;letter-spacing:.1em}
+.coin{display:flex;align-items:center;gap:1.2vh;margin-top:1.8vh;padding-top:1.6vh;border-top:1px dashed #2f6a44}
+.coin i{width:clamp(18px,4.2vh,26px);height:clamp(18px,4.2vh,26px);border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0 0 12%,transparent 34%),#d4a62a;box-shadow:inset 0 0 0 2px #8a6a25,inset -2px -3px 4px rgba(0,0,0,.35)}
+.coin b{font:500 clamp(18px,4.4vh,26px) Oswald,sans-serif;letter-spacing:.06em}
+.right{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:2.2vh;padding-top:4vh}
+button{font:inherit;color:inherit;cursor:pointer;transition:transform .12s,filter .12s}
+button:active{transform:translateY(2px) scale(.99)}
+.play{display:flex;align-items:center;gap:3vh;padding:2.4vh 3.2vh;border:0;border-radius:6px;text-align:left;background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 2px,transparent 2px 4px),linear-gradient(#12733a,#0a4825);box-shadow:inset 0 0 0 2px #072613,inset 0 0 0 4px var(--brass),inset 0 0 0 6px #072613,0 10px 26px rgba(0,0,0,.6)}
+.play b{display:block;font:700 clamp(30px,9vh,56px)/1 Oswald,sans-serif;letter-spacing:.24em;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.play small{display:block;margin-top:.8vh;font-size:clamp(12px,2.7vh,16px);letter-spacing:.22em;color:#bcd6c1;text-transform:uppercase}
+.ball{flex:none;width:clamp(26px,7vh,40px);height:clamp(26px,7vh,40px);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.85) 0 7%,transparent 26%),var(--c);box-shadow:inset -.6vh -.8vh 1.2vh rgba(0,0,0,.5),0 .4vh .8vh rgba(0,0,0,.6);display:grid;place-items:center}
+.ball em{width:46%;height:46%;border-radius:50%;background:#f6f1e4;color:#111;font:700 clamp(10px,2.3vh,14px)/1 Oswald,sans-serif;display:grid;place-items:center;font-style:normal}
+.ball.w{width:clamp(40px,12vh,72px);height:clamp(40px,12vh,72px)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5vh 1.4vw}
+.it{display:flex;align-items:center;gap:1.6vh;padding:1.3vh 1.6vh;background:linear-gradient(#1d140d,#120b07);border:1px solid #3a2a1a;border-bottom-color:#000;border-radius:3px;text-align:left;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.it strong{display:block;font:500 clamp(14px,3.3vh,20px)/1.1 Oswald,sans-serif;letter-spacing:.16em}
+.it .s{display:flex;align-items:center;gap:.8vh;font-size:clamp(11px,2.4vh,14px);color:#9a8a6d;letter-spacing:.06em;margin-top:.3vh}
+.dot{width:1vh;height:1vh;min-width:6px;min-height:6px;border-radius:50%;background:#e0b04a;animation:btpulse 1.6s infinite}
+@keyframes btpulse{50%{opacity:.25}}
+@media (max-aspect-ratio:1/1){#bt{grid-template-columns:1fr;overflow:auto}#bt .lamp{display:none}#bt .right{padding-top:0}}
+`;
+function btP(c){return c.split("\n").map(function(l){l=l.trim();if(!l)return "";if(l[0]=="@")return l;if(l[0]=="&")return "#bt"+l.slice(1);return "#bt "+l;}).join("\n");}
+(function(){
+  if(document.getElementById("btcss"))return;
+  var l=document.createElement("link");l.rel="stylesheet";
+  l.href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Barlow+Condensed:wght@500;600&display=swap";
+  document.head.appendChild(l);
+  var st=document.createElement("style");st.id="btcss";st.textContent=btP(BTCSS);document.head.appendChild(st);
+})();
+var BTN=["Freguês novo","Freguês","Craque do bar","Mestre da mesa","Lenda do bar","Rei do boteco"];
+function btItem(f,c,n,t,s){return "<button class='it' onclick='"+f+"'><i class='ball' style='--c:"+c+"'><em>"+n+"</em></i><span><strong>"+t+"</strong><span class='s'>"+s+"</span></span></button>";}
+function abrirMenu(){
+  treino=false;
+  var xp=save.xp||0,n=nivel(xp),a=xpDe(n),b=xpDe(n+1);
+  var on=Math.round((xp-a)/(b-a)*10),ix=RK.indexOf(rank(n)),bd="";
+  for(var i=0;i<10;i++)bd+="<i"+(i<on?"":" class='off'")+"></i>";
+  var pode=save.dia!==new Date().toDateString();
+  mp.id="bt";
+  mp.style.cssText="position:fixed;inset:0;z-index:20;display:grid";
+  mp.innerHTML="<div class='flags'></div><div class='lamp'><div class='cord'></div><div class='shade'></div><div class='band'></div><div class='bulb'></div></div>"+
+  "<div class='fiado'>FIADO SÓ AMANHÃ<small>(e amanhã não tem)</small></div>"+
+  "<header><div><div class='logo'>SINUCA</div><div class='sub'>Boteco do Zé · mesa 1</div></div><div class='neon'>ABERTO</div></header>"+
+  "<section class='card'><div class='lbl'>Patente</div><div class='rank'><div class='chev'><i></i><i></i></div><b>"+BTN[ix<0?0:ix].toUpperCase()+"</b></div>"+
+  "<div class='lvl'><strong>"+(n<10?"0":"")+n+"</strong><span>NÍVEL</span></div><div class='rail'>"+bd+"</div><div class='xp'>"+xp+" / "+b+" XP</div>"+
+  "<div class='coin'><i></i><b>"+save.moedas+"</b></div></section>"+
+  "<section class='right'><button class='play' onclick='jogarBot()'><i class='ball w' style='--c:#f3efe6'></i><span><b>JOGAR</b><small>Uma valendo a rodada</small></span></button><div class='grid'>"+
+  btItem("menuOnline()","#f2c230",1,"ONLINE","chama a galera")+
+  btItem("irCamp()","#1f4fd0",2,"COPA DO BAR","32 craques")+
+  btItem("irLoja()","#d12a22",3,"BALCÃO","tacos novos")+
+  btItem("irRoleta()","#6a2c91",4,"ROLETA",pode?"<i class='dot'></i>prêmio do dia":"volte amanhã")+
+  btItem("irTreino()","#f08a1a",5,"TREINO","esquenta antes")+
+  btItem("opcoes()","#1d7a3c",6,"AJUSTES","mesa e bolas")+
+  "</div></section>";
+}
+function menuOnline(){
+  mp.id="";
+  mp.style.cssText="position:fixed;inset:0;background:#0d4636;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;z-index:20;text-align:center;overflow:auto";
+  mp.innerHTML=EST+B("irOnline(1)","➕ Criar sala")+B("irOnline(2)","🔗 Entrar na sala")+B("abrirMenu()","⬅ Voltar","s");
+}
+abrirMenu();
+
 </script>
 <button id="btnFull" style="position:fixed;top:6px;right:6px;z-index:99999;width:44px;height:44px;border:0;border-radius:12px;background:#000b;color:#fff;font-size:22px">⛶</button>
 <script>
