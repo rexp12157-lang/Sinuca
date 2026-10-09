@@ -849,6 +849,11 @@ const CUES = [
   { nome: "Coração", preco: 1000, a: "#ffffff", b: "#e8c0d8", r: "#ff7ac0", o: 5 },
   { nome: "Coroa Real", preco: 1500, a: "#fff3a0", b: "#b8860b", r: "#40e0d0", o: 6 },
   { nome: "Galáxia", preco: 2000, a: "#c77dff", b: "#10002b", r: "#ffd1f0", o: 7 },
+  { nome: "Cristal de Gelo", preco: 2200, a: "#e0f7ff", b: "#1e6bff", r: "#ffffff", o: 8 },
+  { nome: "Raio", preco: 2600, a: "#fff7a0", b: "#ff9a00", r: "#222222", o: 9 },
+  { nome: "Rosa", preco: 3000, a: "#ffd1f0", b: "#2f9e44", r: "#ffffff", o: 10 },
+  { nome: "Lua", preco: 3500, a: "#ffffff", b: "#3a5f9e", r: "#fff3a0", o: 11 },
+  { nome: "Diamante", preco: 5000, a: "#e8fbff", b: "#7a4fd0", r: "#7ad8ff", o: 12 },
 ];
 
 function drawCue0(g, x, y, ux, uy, len, k) {
@@ -1016,6 +1021,7 @@ function voltarMenu() { fecharOpc(); abrirMenu(); }
 const ST = [
   [30, 30, 30], [40, 40, 45], [50, 45, 50], [65, 50, 55],
   [55, 65, 65], [60, 70, 60], [80, 75, 70], [95, 90, 90],
+  [85, 80, 80], [88, 85, 85], [90, 88, 90], [93, 92, 92], [100, 100, 100],
 ];
 function stt() { return ST[taco] || ST[0]; }
 function fM() { return 0.9 + stt()[0] / 100 * 0.3; }
@@ -1538,6 +1544,7 @@ function drawOrn(g, t, L) {
   g.setLineDash([]);
   ornA(g, t);
   ornB(g, t);
+  ornC(g, t);
   g.restore();
 }
 function drawCue(g, x, y, ux, uy, len, k) {
@@ -1549,6 +1556,99 @@ function drawCue(g, x, y, ux, uy, len, k) {
   drawOrn(g, k.o, len);
   g.restore();
 }
+
+function ornC(g, t) {
+  if (t === 8) {
+    g.shadowColor = "#8fe8ff"; g.shadowBlur = 10;
+    const as = [-0.9, -0.45, 0, 0.45, 0.9], ls = [22, 30, 42, 30, 22];
+    as.forEach((a, i) => {
+      g.save(); g.translate(10, 0); g.rotate(a);
+      const q = g.createLinearGradient(0, 0, ls[i], 0);
+      q.addColorStop(0, "#ffffff"); q.addColorStop(1, "#19c3e0");
+      g.fillStyle = q;
+      g.beginPath(); g.moveTo(0, -4); g.lineTo(ls[i], 0); g.lineTo(0, 4); g.closePath(); g.fill();
+      g.restore();
+    });
+    bolaBrilho(g, 10, 0, 8, "#ffffff", "#2a9fe0");
+  } else if (t === 9) {
+    g.shadowColor = "#ffe14d"; g.shadowBlur = 12;
+    g.strokeStyle = "rgba(255,225,77,0.8)"; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(18, 0, 20, 0, 7); g.stroke();
+    const q = g.createLinearGradient(6, -16, 34, 16);
+    q.addColorStop(0, "#fff7a0"); q.addColorStop(1, "#ff9a00");
+    g.fillStyle = q;
+    g.beginPath();
+    g.moveTo(6, -16); g.lineTo(24, -3); g.lineTo(15, -1);
+    g.lineTo(34, 16); g.lineTo(12, 3); g.lineTo(21, 1);
+    g.closePath(); g.fill();
+    g.strokeStyle = "#fff"; g.lineWidth = 1; g.stroke();
+  } else if (t === 10) {
+    g.shadowColor = "#ff8ad8"; g.shadowBlur = 8;
+    g.fillStyle = "#2f9e44";
+    for (const s of [-1, 1]) {
+      g.beginPath(); g.ellipse(2, s * 7, 10, 4, s * 0.5, 0, 7); g.fill();
+    }
+    for (let i = 0; i < 6; i++) {
+      g.save(); g.translate(18, 0); g.rotate(i * Math.PI / 3);
+      const q = g.createRadialGradient(0, -8, 1, 0, -8, 9);
+      q.addColorStop(0, "#ffd0ea"); q.addColorStop(1, "#e8186c");
+      g.fillStyle = q;
+      g.beginPath(); g.ellipse(0, -8, 5.5, 9, 0, 0, 7); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = 0.8; g.stroke();
+      g.restore();
+    }
+    bolaBrilho(g, 18, 0, 5, "#fff0a0", "#e8a000");
+  } else if (t === 11) {
+    g.shadowColor = "#bfe0ff"; g.shadowBlur = 12;
+    const q = g.createLinearGradient(4, -14, 30, 14);
+    q.addColorStop(0, "#ffffff"); q.addColorStop(1, "#7aa8e0");
+    g.fillStyle = q;
+    g.beginPath();
+    g.arc(18, 0, 14, Math.PI / 2, Math.PI * 1.5, false);
+    g.arc(22, 0, 11, Math.PI * 1.5, Math.PI / 2, true);
+    g.closePath(); g.fill();
+    estrela(g, 34, 0, 5, 6, 2.5); g.fillStyle = "#fff3a0"; g.fill();
+    estrela(g, 26, -14, 4, 4, 1.5); g.fill();
+  } else if (t === 12) {
+    g.shadowColor = "#ffffff"; g.shadowBlur = 14;
+    const q = g.createLinearGradient(4, -14, 34, 14);
+    q.addColorStop(0, "#e8fbff"); q.addColorStop(0.5, "#7ad8ff"); q.addColorStop(1, "#b07aff");
+    g.fillStyle = q;
+    g.beginPath();
+    g.moveTo(4, 0); g.lineTo(18, -14); g.lineTo(34, 0); g.lineTo(18, 14);
+    g.closePath(); g.fill();
+    g.strokeStyle = "#ffffff"; g.lineWidth = 1.2; g.stroke();
+    g.beginPath();
+    g.moveTo(4, 0); g.lineTo(34, 0);
+    g.moveTo(18, -14); g.lineTo(18, 14);
+    g.moveTo(11, -7); g.lineTo(26, -7);
+    g.moveTo(11, 7); g.lineTo(26, 7);
+    g.stroke();
+    estrela(g, 38, -8, 4, 5, 1.5); g.fillStyle = "#fff"; g.fill();
+  }
+}
+
+var tacoPend = null;
+function desenharTaco(dx, dy, d) { tacoPend = { dx: dx, dy: dy, d: d, t: Date.now() }; }
+var ov = document.createElement("canvas");
+ov.style.cssText = "position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4";
+document.body.appendChild(ov);
+var og = ov.getContext("2d");
+(function ovLoop() {
+  var dpr = window.devicePixelRatio || 1, w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+  if (ov.width !== w || ov.height !== h) { ov.width = w; ov.height = h; }
+  og.setTransform(1, 0, 0, 1, 0, 0);
+  og.clearRect(0, 0, ov.width, ov.height);
+  if (tacoPend && Date.now() - tacoPend.t < 80) {
+    var r = c.getBoundingClientRect(), k = r.width / c.width;
+    og.setTransform(dpr * k, 0, 0, dpr * k, dpr * (r.left + M * k), dpr * (r.top + M * k));
+    var m = Math.hypot(tacoPend.dx, tacoPend.dy) || 1;
+    var ux = -tacoPend.dx / m, uy = -tacoPend.dy / m;
+    var rec = 14 + Math.min(tacoPend.d, 150) * 0.5;
+    drawCue(og, branca.x + ux * rec, branca.y + uy * rec, ux, uy, 230, CUES[taco] || CUES[0]);
+  }
+  requestAnimationFrame(ovLoop);
+})();
 
 function loop() {
 
