@@ -5,25 +5,47 @@
 <style>body{margin:0;background:#222}</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<button onclick="opcoes()" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="z-index:30;max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;background:rgba(0,0,0,0.92);padding:8px;text-align:center">
+<button onclick="opcoes()" style="position:fixed;top:4px;left:54px;z-index:8;font-size:18px">☰</button><div id="menu" style="z-index:30;max-height:80vh;overflow:auto;display:none;position:fixed;top:36px;left:54px;width:250px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:10px;text-align:left">
+<style>
+#menu .sec{color:#8b949e;font-size:12px;margin:10px 0 4px}
+#menu .row{display:flex;flex-wrap:wrap;gap:6px}
+#menu button{flex:1 1 auto;min-height:40px;padding:6px 10px;font-size:14px;border-radius:8px;border:1px solid #444;background:#222;color:#fff}
+#menu button.ativo{background:#1f6feb;border-color:#58a6ff}
+</style>
+<script>
+function marcarOpc(){document.querySelectorAll('#menu button[data-g]').forEach(function(b){var g=b.dataset.g,v=b.dataset.v;var a=g==='mesa'?mesaCor===v:g==='bola'?String(skinBola)===v:String(dif)===v;b.classList.toggle('ativo',a);});}
+</script>
+<div class="sec">Online</div>
+<div class="row">
 <button onclick="criarSala()">🌐 Criar sala</button>
 <button onclick="entrarSala()">🔗 Entrar na sala</button>
-<button onclick="sairOnline();novoJogo()">❌ Sair do online</button><br>
-<button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button><br>
+<button onclick="novoTorneio();mostrarTorneio()">🏆 Campeonato</button>
+<button onclick="sairOnline();novoJogo()">❌ Sair do online</button>
+</div>
+<div class="sec">Dificuldade do bot</div>
+<div class="row">
+<button data-g="dif" data-v="0.2" onclick="dif=0.2;marcarOpc()">Fácil</button>
+<button data-g="dif" data-v="0.08" onclick="dif=0.08;marcarOpc()">Médio</button>
+<button data-g="dif" data-v="0.02" onclick="dif=0.02;marcarOpc()">Difícil</button>
+</div>
+<div class="sec">Mesa</div>
+<div class="row">
+<button data-g="mesa" data-v="#0a7d37" onclick="mesaCor='#0a7d37';marcarOpc()">Brasil</button>
+<button data-g="mesa" data-v="#0a6b2e" onclick="mesaCor='#0a6b2e';marcarOpc()">Verde</button>
+<button data-g="mesa" data-v="#12508f" onclick="mesaCor='#12508f';marcarOpc()">Azul</button>
+<button data-g="mesa" data-v="#8f1d1d" onclick="mesaCor='#8f1d1d';marcarOpc()">Vermelha</button>
+<button data-g="mesa" data-v="#5b2a86" onclick="mesaCor='#5b2a86';marcarOpc()">Roxa</button>
+</div>
+<div class="sec">Bolas</div>
+<div class="row">
+<button data-g="bola" data-v="0" onclick="skinBola=0;marcarOpc()">Clássicas</button>
+<button data-g="bola" data-v="1" onclick="skinBola=1;marcarOpc()">Neon</button>
+<button data-g="bola" data-v="2" onclick="skinBola=2;marcarOpc()">Pastel</button>
+</div>
+<div class="row" style="margin-top:12px">
 <button onclick="fecharOpc()">✅ Fechar</button>
-<button onclick="voltarMenu()">🏠 Menu</button><br>
-<button onclick="mesaCor='#0a6b2e'">Mesa Verde</button>
-<button onclick="mesaCor='#12508f'">Mesa Azul</button>
-<button onclick="mesaCor='#8f1d1d'">Mesa Vermelha</button>
-<button onclick="mesaCor='#5b2a86'">Mesa Roxa</button><button onclick="mesaCor='#0a7d37'">Mesa Brasil</button><br>
-<button onclick="skinBola=0">Bolas Clássicas</button>
-<button onclick="skinBola=1">Bolas Neon</button>
-<button onclick="skinBola=2">Bolas Pastel</button><br>
-<br>
-<br>
-<button onclick="dif=0.2">Fácil</button>
-<button onclick="dif=0.08">Médio</button>
-<button onclick="dif=0.02">Difícil</button>
+<button onclick="voltarMenu()">🏠 Menu</button>
+</div>
 </div>
 <canvas id="c" width="704" height="424"
  style="background:#0a6b2e; touch-action:none; height:calc(100dvh - 6px); width:auto; max-width:calc(100vw - 130px); display:block; margin:0 auto"></canvas>
@@ -1042,7 +1064,7 @@ function jogarBot() { sairOnline(); torneioAtivo = false; novoJogo(); fechar(); 
 function irOnline(n) { fechar(); if (n === 1) criarSala(); else entrarSala(); }
 function irCamp() { fechar(); novoTorneio(); mostrarTorneio(); }
 function irLoja() { mp.style.display = "none"; tela(); abrirLoja(); }
-function opcoes() { document.getElementById("menu").style.display = "block"; }
+function opcoes() { document.getElementById("menu").style.display = "block"; marcarOpc(); }
 function fecharOpc() { document.getElementById("menu").style.display = "none"; }
 function voltarMenu() { fecharOpc(); abrirMenu(); }
 
