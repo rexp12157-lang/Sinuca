@@ -15,7 +15,7 @@
 <button onclick="mesaCor='#0a6b2e'">Mesa Verde</button>
 <button onclick="mesaCor='#12508f'">Mesa Azul</button>
 <button onclick="mesaCor='#8f1d1d'">Mesa Vermelha</button>
-<button onclick="mesaCor='#5b2a86'">Mesa Roxa</button><br>
+<button onclick="mesaCor='#5b2a86'">Mesa Roxa</button><button onclick="mesaCor='#0a7d37'">Mesa Brasil</button><br>
 <button onclick="skinBola=0">Bolas Clássicas</button>
 <button onclick="skinBola=1">Bolas Neon</button>
 <button onclick="skinBola=2">Bolas Pastel</button><br>
@@ -250,6 +250,34 @@ function desenharBola0(b) {
 function desenhar00() {
   ctx.fillStyle = mesaCor;
   ctx.fillRect(0, 0, W, H);
+  if (mesaCor === "#0a7d37") {
+    ctx.fillStyle = "#009c3b";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffdf00";
+    ctx.beginPath();
+    ctx.moveTo(W / 2, H * 0.1);
+    ctx.lineTo(W * 0.9, H / 2);
+    ctx.lineTo(W / 2, H * 0.9);
+    ctx.lineTo(W * 0.1, H / 2);
+    ctx.closePath();
+    ctx.fill();
+    const rr = H * 0.22;
+    ctx.fillStyle = "#002776";
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2, rr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2, rr, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = rr * 0.2;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - rr, H / 2 + rr * 0.35);
+    ctx.quadraticCurveTo(W / 2, H / 2 - rr * 0.5, W / 2 + rr, H / 2 - rr * 0.2);
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.strokeStyle = "#5b3a1a";
   ctx.lineWidth = 8;
   ctx.strokeRect(0, 0, W, H);
@@ -573,7 +601,7 @@ function desenharGuia0(dx, dy) {
   if (alvo) {
     const ax = alvo.x - hx, ay = alvo.y - hy;
     const am = Math.hypot(ax, ay) || 1;
-    ctx.strokeStyle = "rgba(255,220,80,0.9)";
+    ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(alvo.x, alvo.y); ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60); ctx.stroke(); ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(alvo.x, alvo.y);
     ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60);
