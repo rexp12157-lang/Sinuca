@@ -2561,4 +2561,40 @@ somCacapa = function () { if (!tocar("cacapa", 1, 1)) sc0(); };
 function somTacada(p) { tocar("tacada", Math.min(1, 0.4 + 0.6 * p), 1); }
 carregarSons();
 
+
+function somTabela(v) {
+  var n = performance.now();
+  if (n - (somTabela.u || 0) < 50) return;
+  somTabela.u = n;
+  if (!ac) return;
+  if (ac.state === "suspended") ac.resume();
+  var vol = 0.12 + 0.6 * Math.min(1, v / 12);
+  var t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(170, t);
+  o.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t + 0.16);
+  tocar("batida", vol * 0.55, 0.5);
+}
+if (typeof passo === "function") {
+  var passo0 = passo;
+  passo = function () {
+    var arr = bolas.slice();
+    var pv = arr.map(function (b) { return [b.vx, b.vy]; });
+    passo0();
+    var m = 0;
+    arr.forEach(function (b, i) {
+      var p = pv[i];
+      if (!(b.x < R + 4 || b.x > W - R - 4 || b.y < R + 4 || b.y > H - R - 4)) return;
+      var fx = p[0] * b.vx < 0 && Math.abs(p[0]) > 0.5;
+      var fy = p[1] * b.vy < 0 && Math.abs(p[1]) > 0.5;
+      if (fx || fy) m = Math.max(m, Math.hypot(p[0], p[1]));
+    });
+    if (m > 0) somTabela(m);
+  };
+}
+
 </script>
