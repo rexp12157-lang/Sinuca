@@ -2803,7 +2803,7 @@ var FBCFG = {
 };
 var fbDb = null, usuario = null, fbOk = false, tSalvar = null;
 var gravLocal = gravar;
-gravar = function () { gravLocal(); nuvem(); };
+gravar = function () { var r = gravLocal(); nuvem(); return r; };
 function nuvem() {
   if (!usuario || !fbDb) return;
   clearTimeout(tSalvar);
