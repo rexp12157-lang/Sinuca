@@ -666,6 +666,7 @@ function atualizarMira() {
 
 function bater() {
   if (!mirando) return;
+  somTacada(typeof potencia === 'number' ? potencia : 1);
   if (online === 2) { enviar({ t: 'tacada', a: ang, p: potencia * fM(), sx: spinX * efM(), sy: spinY * efM() }); return; }
   const f = potencia * 15 * fM();
   branca.vx = Math.cos(ang) * f;
@@ -2531,5 +2532,33 @@ function menuOnline(){
   mp.innerHTML=EST+B("irOnline(1)","➕ Criar sala")+B("irOnline(2)","🔗 Entrar na sala")+B("abrirMenu()","⬅ Voltar","s");
 }
 abrirMenu();
+
+
+var SB = {};
+function carregarSons() {
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  ["batida", "cacapa", "tacada"].forEach(function (n) {
+    fetch(n + ".mp3").then(function (r) { return r.arrayBuffer(); })
+      .then(function (d) { return new Promise(function (ok, no) { ac.decodeAudioData(d, ok, no); }); })
+      .then(function (b) { SB[n] = b; }).catch(function () {});
+  });
+}
+function tocar(n, vol, rate) {
+  if (!SB[n] || !ac) return false;
+  if (ac.state === "suspended") ac.resume();
+  var s = ac.createBufferSource(), g = ac.createGain();
+  s.buffer = SB[n]; s.playbackRate.value = rate || 1; g.gain.value = vol;
+  s.connect(g); g.connect(ac.destination); s.start();
+  return true;
+}
+var sb0 = somBatida, sc0 = somCacapa;
+somBatida = function (v) {
+  if (v <= 0.3) return;
+  var vol = Math.min(1, 0.15 + v / 12 * 0.85);
+  if (!tocar("batida", vol, 0.95 + Math.random() * 0.1)) sb0(v);
+};
+somCacapa = function () { if (!tocar("cacapa", 1, 1)) sc0(); };
+function somTacada(p) { tocar("tacada", Math.min(1, 0.4 + 0.6 * p), 1); }
+carregarSons();
 
 </script>
