@@ -1,3 +1,6 @@
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>window.onerror=function(m,u,l){var e=document.createElement("div");e.style.cssText="position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;z-index:99;font:14px sans-serif;padding:6px";e.textContent="ERRO linha "+l+": "+m;document.body.appendChild(e)}</script>
 <style>html,body{margin:0;overflow:hidden;background:#111}</style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -2655,5 +2658,90 @@ function desenharCacapas() {
   cacapas.forEach(function (k) { ctx.beginPath(); ctx.arc(k.x, k.y, 23, 0, 7); ctx.fill(); });
   ctx.restore();
 }
+
+
+var FBCFG = {
+  apiKey: "AIzaSyBKVfBIdzE2SIFrb72FUSFQZNDWrEE-kt0",
+  authDomain: "sinuca-5a331.firebaseapp.com",
+  projectId: "sinuca-5a331",
+  storageBucket: "sinuca-5a331.firebasestorage.app",
+  messagingSenderId: "1017768318380",
+  appId: "1:1017768318380:web:96c47711bd53597180d609"
+};
+var fbDb = null, usuario = null, fbOk = false, tSalvar = null;
+var gravLocal = gravar;
+gravar = function () { gravLocal(); nuvem(); };
+function nuvem() {
+  if (!usuario || !fbDb) return;
+  clearTimeout(tSalvar);
+  tSalvar = setTimeout(function () { salvarAgora(); }, 2500);
+}
+function salvarAgora(manual) {
+  if (!usuario || !fbDb) { toast("Entre com o Google primeiro"); return; }
+  fbDb.collection("jogadores").doc(usuario.uid)
+    .set({ dados: JSON.stringify(save), t: Date.now() })
+    .then(function () { if (manual) toast("Salvo na nuvem ☁"); })
+    .catch(function () { toast("Falha ao salvar (sem internet?)"); });
+}
+function entrarGoogle() {
+  if (!fbOk) { toast("Firebase não carregou (sem internet?)"); return; }
+  firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(function (e) { toast("Erro no login: " + (e.code || e.message)); });
+}
+function sairConta() {
+  firebase.auth().signOut().then(function () { toast("Saiu da conta"); });
+}
+function sincronizar() {
+  var ref = fbDb.collection("jogadores").doc(usuario.uid);
+  ref.get().then(function (d) {
+    var local = JSON.stringify(save);
+    if (!d.exists) {
+      toast("Progresso salvo na conta ☁");
+      return ref.set({ dados: local, t: Date.now() });
+    }
+    var nuvemTxt = d.data().dados;
+    if (nuvemTxt === local) return;
+    var temLocal = (save.xp || 0) > 0 || save.moedas !== 200 || save.donos.length > 1;
+    var usar = true;
+    if (temLocal) usar = confirm("Sua conta já tem progresso salvo.\n\nOK = usar o da conta (nuvem)\nCancelar = manter o deste aparelho e substituir a nuvem");
+    if (!usar) { toast("Mantido o deste aparelho"); return ref.set({ dados: local, t: Date.now() }); }
+    try { localStorage.setItem("sinuca_backup", local); } catch (e) {}
+    var n = JSON.parse(nuvemTxt);
+    Object.keys(save).forEach(function (k) { delete save[k]; });
+    Object.assign(save, n);
+    taco = save.taco || 0;
+    gravLocal();
+    toast("Progresso da conta carregado ☁");
+  }).catch(function () { toast("Erro ao sincronizar"); })
+    .then(function () { abrirMenu(); });
+}
+function desenharConta() {
+  if (!mp || mp.id !== "bt" || mp.style.display === "none") return;
+  var o = document.getElementById("bt-conta");
+  if (o) o.remove();
+  var d = document.createElement("div");
+  d.id = "bt-conta";
+  d.style.cssText = "position:absolute;right:4vw;bottom:2.5vh;z-index:5;display:flex;gap:8px;align-items:center;font:500 14px 'Barlow Condensed',sans-serif;letter-spacing:.08em;color:#efe3c8";
+  var b = "border:0;border-radius:6px;padding:9px 12px;background:#efe3c8;color:#111;font:inherit;cursor:pointer";
+  if (usuario) {
+    var nome = (usuario.displayName || "Jogador").split(" ")[0];
+    d.innerHTML = "<span>☁ " + nome + "</span><button style=\"" + b + "\" onclick=\"salvarAgora(1)\">Salvar agora</button><button style=\"" + b + "\" onclick=\"sairConta()\">Sair</button>";
+  } else {
+    d.innerHTML = "<button style=\"" + b + "\" onclick=\"entrarGoogle()\">Entrar com Google</button>";
+  }
+  mp.appendChild(d);
+}
+var amNuv = abrirMenu;
+abrirMenu = function () { amNuv(); desenharConta(); };
+try {
+  firebase.initializeApp(FBCFG);
+  fbDb = firebase.firestore();
+  fbOk = true;
+  firebase.auth().onAuthStateChanged(function (u) {
+    usuario = u;
+    if (u) sincronizar(); else desenharConta();
+  });
+} catch (e) {}
+abrirMenu();
 
 </script>
