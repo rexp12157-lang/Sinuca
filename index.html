@@ -2597,4 +2597,33 @@ if (typeof passo === "function") {
   };
 }
 
+
+(function () {
+  function env(n, v) { if (online === 1) enviar({ t: "som", n: n, v: v }); }
+  var b0 = somBatida, c0 = somCacapa, t0 = somTacada, m0 = somTabela;
+  somBatida = function (v) { b0(v); env("b", v); };
+  somCacapa = function () { c0(); env("c", 0); };
+  somTacada = function (p) { t0(p); env("t", p); };
+  somTabela = function (v) { m0(v); env("m", v); };
+  var rc = receber;
+  receber = function (m) {
+    if (m && m.t === "som") {
+      if (online === 2) {
+        if (m.n === "b") b0(m.v);
+        else if (m.n === "c") c0();
+        else if (m.n === "t") t0(m.v);
+        else if (m.n === "m") m0(m.v);
+      }
+      return;
+    }
+    rc(m);
+  };
+  var at = aplicarTacada;
+  aplicarTacada = function (m) {
+    var j = jogando;
+    at(m);
+    if (!j && jogando) t0(m.p);
+  };
+})();
+
 </script>
