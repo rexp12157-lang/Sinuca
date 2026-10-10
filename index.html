@@ -640,7 +640,7 @@ function desenharGuia0(dx, dy) {
   if (alvo) {
     const ax = alvo.x - hx, ay = alvo.y - hy;
     const am = Math.hypot(ax, ay) || 1;
-    ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(alvo.x, alvo.y); ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60); ctx.stroke(); ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(alvo.x, alvo.y); ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60); ctx.stroke(); ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(alvo.x, alvo.y);
     ctx.lineTo(alvo.x + (ax / am) * 60, alvo.y + (ay / am) * 60);
