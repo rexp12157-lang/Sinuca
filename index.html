@@ -2929,3 +2929,32 @@ abrirMenu();
 })();
 
 </script>
+<script>
+/* PRESENTE_DONO: remover depois de usar */
+setTimeout(function(){ try {
+  if (location.search.indexOf("presente=x7k2q9") < 0) return;
+  if (localStorage.getItem("presente_dono")) return;
+  if (typeof save === "undefined" || typeof CUES === "undefined") return;
+  save.moedas = (save.moedas || 0) + 30000;
+  save.xp = Math.max(save.xp || 0, 392040);
+  if (!Array.isArray(save.donos)) save.donos = [0];
+  const i = CUES.findIndex(k => k.nome === "Samurai");
+  if (i >= 0 && !save.donos.includes(i)) save.donos.push(i);
+  if (typeof gravar === "function") gravar();
+  localStorage.setItem("presente_dono", "1");
+  alert("Presente do dono: +30000 moedas, Samurai e nivel 100!");
+} catch (e) {} }, 3000);
+</script>
+<script>
+/* PRESENTE_DONO2: remover depois de usar */
+setTimeout(function(){ try {
+  if (location.search.indexOf("nivel=k4m8z1") < 0) return;
+  if (localStorage.getItem("presente_nivel")) return;
+  if (typeof save === "undefined") return;
+  save.xp = Math.max(save.xp || 0, 392040);
+  if (typeof gravar === "function") gravar();
+  if (typeof salvarAgora === "function") { try { salvarAgora(); } catch (e) {} }
+  localStorage.setItem("presente_nivel", "1");
+  alert("Nivel 100 liberado! Feche e abra o menu para ver.");
+} catch (e) {} }, 4000);
+</script>
