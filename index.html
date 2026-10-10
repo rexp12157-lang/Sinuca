@@ -2744,4 +2744,55 @@ try {
 } catch (e) {}
 abrirMenu();
 
+
+// perf
+(function () {
+  if (location.search.indexOf("perf") < 0) return;
+  var T = {}, fr = 0, t0 = performance.now();
+  var box = document.createElement("div");
+  box.style.cssText = "position:fixed;top:4px;right:60px;z-index:99;background:rgba(0,0,0,.75);color:#0f0;font:12px monospace;padding:4px 6px;border-radius:4px;pointer-events:none;white-space:pre";
+  document.body.appendChild(box);
+  function med(nome) {
+    var f = window[nome];
+    if (typeof f !== "function") return;
+    window[nome] = function () {
+      var a = performance.now();
+      var r = f.apply(this, arguments);
+      T[nome] = (T[nome] || 0) + performance.now() - a;
+      return r;
+    };
+  }
+  ["passo", "desenhar", "desenharTaco", "desenharGuia"].forEach(med);
+  function tick(n) {
+    fr++;
+    if (n - t0 >= 1000) {
+      var m = function (k) { return ((T[k] || 0) / fr).toFixed(1) + " ms"; };
+      var tam = "";
+      try { tam = "\nov " + ov.width + "x" + ov.height + "  c " + c.width + "x" + c.height; } catch (e) {}
+      box.textContent = "FPS " + Math.round(fr * 1000 / (n - t0)) + "\nfisica " + m("passo") + "\nmesa " + m("desenhar") + "\ntaco " + m("desenharTaco") + "\nguia " + m("desenharGuia") + tam;
+      T = {}; fr = 0; t0 = n;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+
+
+// btntela
+(function () {
+  var b = document.createElement("button");
+  b.id = "btntela"; b.textContent = "⛶";
+  b.style.cssText = "position:fixed;top:6px;right:12px;z-index:8;width:34px;height:34px;font-size:20px;border:0;border-radius:6px;background:#f2f2f2;color:#111;cursor:pointer";
+  b.onclick = function () {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) { (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    var p = f.call(e);
+    if (p && p.then) p.then(function () { try { screen.orientation.lock("landscape").catch(function () {}); } catch (x) {} }).catch(function () {});
+  };
+  document.body.appendChild(b);
+})();
+
 </script>
